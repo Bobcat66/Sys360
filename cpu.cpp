@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 #include <csetjmp>
+#include <cmath>
+ 
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
 #define CHANNEL1 0b01000000
@@ -176,7 +178,7 @@ class cpu
         if (address % 4 != 0){interrupt(0x06);}
         return (word)(getHalfword(address) << 16) + getHalfword(address + 2);
     }
-    /*Returns the doubleword stored at the address. WARNING: possibbly memory-unsafe*/
+    /*Returns the doubleword stored at the address. WARNING: possibly memory-unsafe*/
     inline doubleword getDoubleword(word address){
         if (address % 8 != 0){interrupt(0x06);}
         return (doubleword)(getWord(address) << 32) + getWord(address + 4);
@@ -184,9 +186,27 @@ class cpu
 
     /*Returns an address generated from X, B, and D*/
     inline word getAddr(uint8_t X, uint8_t B, uint16_t D){
-        return (rgstrs.gen[X] + rgstrs.gen[B] + D)%(1<<24);
+        return (rgstrs.gen[X] + rgstrs.gen[B] + D) % (1<<24);
     }
 
+    /*Converts a 64-bit packed decimal into a signed integer*/
+    int64_t decToInt(uint64_t dec){
+        char sign = dec % (1 << 4);
+        dec /= (1 << 4);
+        char digits[15];
+        uint64_t outint = 0;
+        for (int i = 0; i < 15; i++){
+            digits[i] = dec % (1 << 4);
+            dec /= (1 << 4);
+        }
+        for (int i = 0; i < 15; i++){
+            outint += digits[i] * std::pow(10,i);
+        }
+        if(sign == 0b1011 || sign == 0b1010){
+            outint *= -1;
+        }
+        return outint;
+    }
     //INSTRUCTION SET
 
     //STD Load operations
@@ -483,9 +503,90 @@ class cpu
         rgstrs.gen[(R1 + 1) % 16] = prod % (1 << 32);
     }
 
+    /*Multiplies halfword from memory with R1. Same rules apply for storing the product as other multiplication commands*/
+    void MH(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        if (R1 % 2 != 0){interrupt(0x0E);}
+        word multiplicand = rgstrs.gen[(R1 + 1) % 16];
+        word multiplier = signex16_32(getHalfword(getAddr(X1,B2,D2)));
+        doubleword prod = (doubleword)multiplicand * multiplier;
+        rgstrs.gen[R1] = prod / (1 << 32);
+        rgstrs.gen[(R1 + 1) % 16] = prod % (1 << 32);
+    }
+
     // STD comparator ops
 
-    
+    /*R1 is compared to R2, and the result is stored in the cond register. RR*/
+    void CR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        int32_t signedOprnd1 = (int32_t) rgstrs.gen[R1];
+        int32_t signedOprnd2 = (int32_t) rgstrs.gen[R2];
+        if (signedOprnd1 == signedOprnd2) {
+            psw.cond = 0;
+        } else if (signedOprnd1 < signedOprnd2) {
+            psw.cond = 1;
+        } else {
+            psw.cond = 2;
+        }
+    }
+
+    /*R1 is compared to word loaded from memory, and the result is stored in the cond register. RX*/
+    void C(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        int32_t signedOprnd1 = (int32_t) rgstrs.gen[R1];
+        int32_t signedOprnd2 = (int32_t) getWord(getAddr(X1,B2,D2));
+        if (signedOprnd1 == signedOprnd2) {
+            psw.cond = 0;
+        } else if (signedOprnd1 < signedOprnd2) {
+            psw.cond = 1;
+        } else {
+            psw.cond = 2;
+        }
+    }
+
+    /*R1 is compared to halfword loaded from memory, and the result is stored in the cond register. RX*/
+    void CH(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        int32_t signedOprnd1 = (int32_t) rgstrs.gen[R1];
+        int32_t signedOprnd2 = (int32_t) signex16_32(getHalfword(getAddr(X1,B2,D2)));
+        if (signedOprnd1 == signedOprnd2) {
+            psw.cond = 0;
+        } else if (signedOprnd1 < signedOprnd2) {
+            psw.cond = 1;
+        } else {
+            psw.cond = 2;
+        }
+    }
+
+    /*divides first operand by second operand. the first operand is stored in an even/odd register pair. The second operand is R2. the first operand is replaced by the
+    quotient and remainder. RR*/
+    void DR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        if (R1 % 2 != 0){interrupt(0x0E);} //Specification error
+        doubleword dividend = (doubleword) (rgstrs.gen[R1] << 32) + rgstrs.gen[(R1 + 1) % 16];
+        word divisor = rgstrs.gen[R2];
+        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){interrupt(0x09);} //Floating point divide error
+        rgstrs.gen[R1] = (word)(dividend/divisor);
+        rgstrs.gen[(R1 + 1) % 16] = (word)(dividend % divisor);
+    }
+
+    /*divides first operand by second operand. the first operand is stored in an even/odd register pair. The second operand is retrieved from memory. the first operand is replaced by the
+    quotient and remainder. RX*/
+    void D(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        if (R1 % 2 != 0){interrupt(0x0E);} //Specification error
+        doubleword dividend = (doubleword) (rgstrs.gen[R1] << 32) + rgstrs.gen[(R1 + 1) % 16];
+        word divisor = getWord(getAddr(X1,B2,D2));
+        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){interrupt(0x09);} //Floating point divide error
+        rgstrs.gen[R1] = (word)(dividend/divisor);
+        rgstrs.gen[(R1 + 1) % 16] = (word)(dividend % divisor);
+    }
+
+    /*Converts packed decimal number retrieved from a doubleword in memory to binary, and stores the result in R1. RX*/
+    void CVB(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        doubleword decint = getDoubleword(getAddr(X1,B2,D2));
+    }
 
 
     //STD Operation List
