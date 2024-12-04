@@ -593,10 +593,12 @@ class cpu
     void CVB(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
         doubleword decint = (doubleword) dec64ToInt(getDoubleword(getAddr(X1,B2,D2)));
+        rgstrs.gen[R1] = static_cast<word>(decint);
         if (decint > 0xFFFFFFFF) {
             //Raises fixed point divide exception if the resulting decimal digit cannot be stored in 32 bits
             throw 0x09;
         }
+
     }
 
 
