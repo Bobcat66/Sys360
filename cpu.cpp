@@ -58,7 +58,6 @@ typedef struct ProgramStatusWordStruct {
 struct Registers {
     word gen[16]; //General registers
     doubleword fp[4]; //Floating-point registers
-    ProgramStatusWord psw; //Program status word
 };
 
 inline uint8_t leftNibble(byte in){return in/16;}
@@ -76,8 +75,11 @@ inline word rightWord(doubleword in){return (word)in%(1<<32);}
 inline halfword displacement(halfword in){return in%(1<<12);}
 inline uint8_t baseRegister(halfword in){return in/(1<<12);}
 
-//Checks for overflow in addition between two integers
+//Checks for overflow in addition between two 32 bit integers
 inline bool chkOverflow(word add1, word add2){return ((add1 & MAXNEG_32) != (add2 & MAXNEG_32)) && (((add1 + add2) & MAXNEG_32) != (add1 & MAXNEG_32));}
+
+//Checks for carry in logical addition between two 32 bit unsigned integers
+inline bool chkCarry(word add1, word add2){return add1 > (INT32_MAX - add2);}
 
 //Sign extension functions
 
@@ -124,15 +126,36 @@ class cpu
 
     Registers rgstrs = {
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0}
+        {0,0,0,0}
     };
 
-    word packPSW(){
-        word packpsw = rgstrs.psw.smsk;
-        packpsw <<= 4;
+    ProgramStatusWord psw = {0,0,0,0,0,0,0,0,0,0,0};
 
+    word packPSW(){
+        word packpsw = (word) psw.smsk;
+        packpsw <<= 4;
+        packpsw += psw.key;
+        packpsw <<= 1;
+        packpsw += psw.ascii;
+        packpsw <<= 1;
+        packpsw += psw.mchk;
+        packpsw <<= 1;
+        packpsw += psw.wait;
+        packpsw <<= 1;
+        packpsw += psw.pst;
+        packpsw <<= 16;
+        packpsw += psw.ic;
+        packpsw <<= 2;
+        packpsw += psw.ilc;
+        packpsw <<= 2;
+        packpsw += psw.cond;
+        packpsw <<= 4;
+        packpsw += psw.pmsk;
+        packpsw <<= 24;
+        packpsw += psw.nxia;
+        return packpsw;
     }
+
     void interrupt(int interruptionCode){
         //Add some extra functionality
         longjmp(env,interruptionCode);
@@ -190,18 +213,18 @@ class cpu
         LOAD_RR_FIELDS
         rgstrs.gen[R1] = rgstrs.gen[R2];
         if (rgstrs.gen[R1] == 0){
-            rgstrs.psw.cond = 0;
+            psw.cond = 0;
         } else if (static_cast<int32_t>(rgstrs.gen[R1]) < 0){
-            rgstrs.psw.cond = 1;
+            psw.cond = 1;
         } else {
-            rgstrs.psw.cond = 2;
+            psw.cond = 2;
         }
     }
 
     /*Loads the two's complement of the R2 Register into the R1 Register. Only b1 is used. RR*/
     void LCR(byte b1, halfword word1, halfword word2){
         LOAD_RR_FIELDS
-        if (rgstrs.gen[R2] == MAXNEG_32 && rgstrs.psw.pmsk & FP_OVERFLOW){
+        if (rgstrs.gen[R2] == MAXNEG_32 && psw.pmsk & FP_OVERFLOW){
             //Raises FP overflow interrupt if the most negative number is complemented
             interrupt(0x08);
         }
@@ -211,7 +234,7 @@ class cpu
     /*Loads the absolute value of the R2 register into the R1 Register. Only b1 is used. RR*/
     void LPR(byte b1, halfword word1, halfword word2){
         LOAD_RR_FIELDS
-        if (rgstrs.gen[R2] == MAXNEG_32 && rgstrs.psw.pmsk & FP_OVERFLOW){
+        if (rgstrs.gen[R2] == MAXNEG_32 && psw.pmsk & FP_OVERFLOW){
             //Raises FP overflow interrupt if the most negative number is complemented
             interrupt(0x08);
         }
@@ -259,16 +282,16 @@ class cpu
         LOAD_RR_FIELDS
         word sum = rgstrs.gen[R1] + rgstrs.gen[R2];
         if (chkOverflow(rgstrs.gen[R1],rgstrs.gen[R2])){
-            rgstrs.psw.cond = 3;
-            if (rgstrs.psw.pmsk & FP_OVERFLOW){
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){
                 interrupt(0x08);
             }
         } else if (sum == 0){
-            rgstrs.psw.cond = 0;
-        } else if (sum > 0) {
-            rgstrs.psw.cond = 2;
+            psw.cond = 0;
+        } else if (sum & MAXNEG_32) {
+            psw.cond = 2;
         } else {
-            rgstrs.psw.cond = 1;
+            psw.cond = 1;
         }
         rgstrs.gen[R1] = sum;
     }
@@ -281,14 +304,14 @@ class cpu
         word add2 = rgstrs.gen[R1];
         word sum = add1 + add2;
         if (chkOverflow(add1,add2)){
-            rgstrs.psw.cond = 3;
-            if (rgstrs.psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
         } else if (sum == 0){
-            rgstrs.psw.cond = 0;
-        } else if (rgstrs.gen[R1] > 0) {
-            rgstrs.psw.cond = 2;
+            psw.cond = 0;
+        } else if (sum & MAXNEG_32) {
+            psw.cond = 2;
         } else {
-            rgstrs.psw.cond = 1;
+            psw.cond = 1;
         }
         rgstrs.gen[R1] = sum;
     }
@@ -301,17 +324,169 @@ class cpu
         word add2 = rgstrs.gen[R1];
         word sum = add1 + add2;
         if (chkOverflow(add1,add2)){
-            rgstrs.psw.cond = 3;
-            if (rgstrs.psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
         } else if (sum == 0){
-            rgstrs.psw.cond = 0;
-        } else if (rgstrs.gen[R1] > 0) {
-            rgstrs.psw.cond = 2;
+            psw.cond = 0;
+        } else if (sum & MAXNEG_32) {
+            psw.cond = 2;
         } else {
-            rgstrs.psw.cond = 1;
+            psw.cond = 1;
         }
         rgstrs.gen[R1] = sum;
     }
+
+    /*Performs Logical add between R1 and R2, stores result in R1. Due to the 2's complement integer representation, Logical add is identical mathematically to arithmetic add, Logical Add does not recognize overflow, and only tracks if the result is zero or nonzero. Only uses b1. RR*/
+    void ALR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        word add1 = rgstrs.gen[R1];
+        word add2 = rgstrs.gen[R2];
+        int carry = 0;
+        word sum = add1 + add2;
+        if (chkCarry(add1,add2)){
+            carry++;
+        }
+        rgstrs.gen[R1] = sum;
+        psw.cond = (carry << 1) + (sum == 0 ? 0 : 1);
+    }
+
+    /*Performs Logical add between R1 and a Word loaded from the address. Result is stored in R1. Uses b1 and word1. RX*/
+    void AL(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        word add1 = rgstrs.gen[R1];
+        word add2 = getWord(getAddr(X1,B2,D2));
+        int carry = 0;
+        word sum = add1 + add2;
+        if (chkCarry(add1,add2)){
+            carry++;
+        }
+        rgstrs.gen[R1] = sum;
+        psw.cond = (carry << 1) + (sum == 0 ? 0 : 1);
+    }
+
+    //STD Subtract operations
+
+    /*Subtracts R2 register from R1 register. Result is stored in R1. Only b1 is used. RR*/
+    void SR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        word min = rgstrs.gen[R1];
+        word sub = ~rgstrs.gen[R2] + 1;
+        word diff = min + sub;
+        if (chkOverflow(min,sub)){
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){
+                interrupt(0x08);
+            }
+        } else if (diff == 0){
+            psw.cond = 0;
+        } else if (diff & MAXNEG_32) {
+            psw.cond = 2;
+        } else {
+            psw.cond = 1;
+        }
+        rgstrs.gen[R1] = diff;
+    }
+
+    /*Subtracts word from memory address from R1 register. b1 and word1 are used. RX*/
+    void S(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        word min = rgstrs.gen[R1];
+        word sub = ~getWord(getAddr(X1,B2,D2)) + 1;
+        word diff = min + sub;
+        if (chkOverflow(min,sub)){
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+        } else if (diff == 0){
+            psw.cond = 0;
+        } else if (diff & MAXNEG_32) {
+            psw.cond = 2;
+        } else {
+            psw.cond = 1;
+        }
+        rgstrs.gen[R1] = diff;
+    }
+
+    /*Adds halfword from memory address to R1 register. b1 and word1 are used. RX*/
+    void SH(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        word min = rgstrs.gen[R1];
+        word sub = ~signex16_32(getHalfword(getAddr(X1,B2,D2))) + 1;
+        word diff = min + sub;
+        if (chkOverflow(min,sub)){
+            psw.cond = 3;
+            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+        } else if (diff == 0){
+            psw.cond = 0;
+        } else if (diff & MAXNEG_32) {
+            psw.cond = 2;
+        } else {
+            psw.cond = 1;
+        }
+        rgstrs.gen[R1] = diff;
+    }
+
+    /*Performs Logical subtract between R1 and R2, stores result in R1. Only uses b1. RR*/
+    void SLR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        word min = rgstrs.gen[R1];
+        word sub = ~rgstrs.gen[R2] + 1;
+        int carry = 0;
+        word diff = min + sub;
+        if (chkCarry(min,sub)){
+            carry++;
+        }
+        rgstrs.gen[R1] = diff;
+        psw.cond = (carry < 1) + (diff == 0 ? 0 : 1);
+    }
+
+    /*Performs Logical subtract between R1 and a Word loaded from the address. Result is stored in R1. Uses b1 and word1. RX*/
+    void SL(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        word min = rgstrs.gen[R1];
+        word sub = ~getWord(getAddr(X1,B2,D2)) + 1;
+        int carry = 0;
+        word diff = min + sub;
+        if (chkCarry(min,sub)){
+            carry++;
+        }
+        rgstrs.gen[R1] = diff;
+        psw.cond = (carry < 1) + (diff == 0 ? 0 : 1);
+    }
+
+    // STD Multiplication ops
+    
+    /*Multiplies the first operand (multiplicand) by the second operand (multiplier), and stores the result in the location of the first operand. 
+    NOTE: Both multiplier and multiplicand are 32 bit integers, while the product is a 64 bit integer. The product is
+    stored in an even/odd register pair, and the multiplicand is retrieved from the odd register. R1 must refer to an even register, or a specification
+    interrupt will occur. Only uses b1. RR*/
+    void MR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        if (R1 % 2 != 0){interrupt(0x0E);}
+        word multiplicand = rgstrs.gen[(R1 + 1) % 16];
+        word multiplier = rgstrs.gen[R2];
+        doubleword prod = (doubleword)multiplicand * multiplier;
+        rgstrs.gen[R1] = prod / (1 << 32);
+        rgstrs.gen[(R1 + 1) % 16] = prod % (1 << 32);
+    }
+
+    /*Multiplies the first operand (multiplicand) by the second operand (multiplier), and stores the result in the location of the first operand. 
+    NOTE: Both multiplier and multiplicand are 32 bit integers, while the product is a 64 bit integer. The product is
+    stored in an even/odd register pair, and the multiplicand is retrieved from the odd register. R1 must refer to an even register, or a specification
+    interrupt will occur. Uses b1 and word1. RX*/
+    void M(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        if (R1 % 2 != 0){interrupt(0x0E);}
+        word multiplicand = rgstrs.gen[(R1 + 1) % 16];
+        word multiplier = getWord(getAddr(X1,B2,D2));
+        doubleword prod = (doubleword)multiplicand * multiplier;
+        rgstrs.gen[R1] = prod / (1 << 32);
+        rgstrs.gen[(R1 + 1) % 16] = prod % (1 << 32);
+    }
+
+    // STD comparator ops
+
+    
+
 
     //STD Operation List
     std::unordered_map<byte,op> stdOps;
