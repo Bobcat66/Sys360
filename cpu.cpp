@@ -158,29 +158,24 @@ class cpu
         return packpsw;
     }
 
-    void interrupt(int interruptionCode){
-        //Add some extra functionality
-        longjmp(env,interruptionCode);
-    }
-
     /*Returns the byte stored at the address. WARNING: possibly memory-unsafe*/
     inline byte getByte(word address){
-        if (address >= coreSize){interrupt(0x05);}
+        if (address >= coreSize){throw 0x05;}
         return *(core + address);
     }
     /*Returns the halfword stored at the address. WARNING: possibly memory-unsafe*/
     inline halfword getHalfword(word address){
-        if (address % 2 != 0){interrupt(0x06);}
+        if (address % 2 != 0){throw 0x06;}
         return (halfword)(getByte(address) << 8) + getByte(address + 1);
     }
     /*Returns the word stored at the address. WARNING: possibly memory-unsafe*/
     inline word getWord(word address){
-        if (address % 4 != 0){interrupt(0x06);}
+        if (address % 4 != 0){throw 0x06;}
         return (word)(getHalfword(address) << 16) + getHalfword(address + 2);
     }
     /*Returns the doubleword stored at the address. WARNING: possibly memory-unsafe*/
     inline doubleword getDoubleword(word address){
-        if (address % 8 != 0){interrupt(0x06);}
+        if (address % 8 != 0){throw 0x06;}
         return (doubleword)(getWord(address) << 32) + getWord(address + 4);
     }
 
@@ -190,20 +185,32 @@ class cpu
     }
 
     /*Converts a 64-bit packed decimal into a signed integer*/
-    int64_t decToInt(uint64_t dec){
+    int64_t dec64ToInt(uint64_t dec){
         char sign = dec % (1 << 4);
         dec /= (1 << 4);
         char digits[15];
         uint64_t outint = 0;
         for (int i = 0; i < 15; i++){
             digits[i] = dec % (1 << 4);
+            if (digits[i] > 9){throw 0x07;} //Raise Data exception if invalid digit
             dec /= (1 << 4);
         }
         for (int i = 0; i < 15; i++){
             outint += digits[i] * std::pow(10,i);
         }
-        if(sign == 0b1011 || sign == 0b1010){
-            outint *= -1;
+        switch (sign){
+            case 0b1010:
+            case 0b1100:
+            case 0b1110:
+            case 0b1111:
+                break;
+            case 0b1011:
+            case 0b1101:
+                outint *= -1;
+                break;
+            default:
+                //Raise data exception if invalid digit
+                throw 0x07;
         }
         return outint;
     }
@@ -246,7 +253,7 @@ class cpu
         LOAD_RR_FIELDS
         if (rgstrs.gen[R2] == MAXNEG_32 && psw.pmsk & FP_OVERFLOW){
             //Raises FP overflow interrupt if the most negative number is complemented
-            interrupt(0x08);
+            throw 0x08;
         }
         rgstrs.gen[R1] = ~rgstrs.gen[R2] + 1;
     }
@@ -256,7 +263,7 @@ class cpu
         LOAD_RR_FIELDS
         if (rgstrs.gen[R2] == MAXNEG_32 && psw.pmsk & FP_OVERFLOW){
             //Raises FP overflow interrupt if the most negative number is complemented
-            interrupt(0x08);
+            throw 0x08;
         }
         if (rgstrs.gen[R2] & MAXNEG_32){
             rgstrs.gen[R1] = ~rgstrs.gen[R2] + 1;
@@ -304,7 +311,7 @@ class cpu
         if (chkOverflow(rgstrs.gen[R1],rgstrs.gen[R2])){
             psw.cond = 3;
             if (psw.pmsk & FP_OVERFLOW){
-                interrupt(0x08);
+                throw 0x08;
             }
         } else if (sum == 0){
             psw.cond = 0;
@@ -325,7 +332,7 @@ class cpu
         word sum = add1 + add2;
         if (chkOverflow(add1,add2)){
             psw.cond = 3;
-            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            if (psw.pmsk & FP_OVERFLOW){throw 0x08;}
         } else if (sum == 0){
             psw.cond = 0;
         } else if (sum & MAXNEG_32) {
@@ -345,7 +352,7 @@ class cpu
         word sum = add1 + add2;
         if (chkOverflow(add1,add2)){
             psw.cond = 3;
-            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            if (psw.pmsk & FP_OVERFLOW){throw 0x08;}
         } else if (sum == 0){
             psw.cond = 0;
         } else if (sum & MAXNEG_32) {
@@ -395,7 +402,7 @@ class cpu
         if (chkOverflow(min,sub)){
             psw.cond = 3;
             if (psw.pmsk & FP_OVERFLOW){
-                interrupt(0x08);
+                throw 0x08;
             }
         } else if (diff == 0){
             psw.cond = 0;
@@ -415,7 +422,7 @@ class cpu
         word diff = min + sub;
         if (chkOverflow(min,sub)){
             psw.cond = 3;
-            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            if (psw.pmsk & FP_OVERFLOW){throw 0x08;}
         } else if (diff == 0){
             psw.cond = 0;
         } else if (diff & MAXNEG_32) {
@@ -434,7 +441,7 @@ class cpu
         word diff = min + sub;
         if (chkOverflow(min,sub)){
             psw.cond = 3;
-            if (psw.pmsk & FP_OVERFLOW){interrupt(0x08);}
+            if (psw.pmsk & FP_OVERFLOW){throw 0x08;}
         } else if (diff == 0){
             psw.cond = 0;
         } else if (diff & MAXNEG_32) {
@@ -481,7 +488,7 @@ class cpu
     interrupt will occur. Only uses b1. RR*/
     void MR(byte b1, halfword word1, halfword word2){
         LOAD_RR_FIELDS
-        if (R1 % 2 != 0){interrupt(0x0E);}
+        if (R1 % 2 != 0){throw 0x0E;}
         word multiplicand = rgstrs.gen[(R1 + 1) % 16];
         word multiplier = rgstrs.gen[R2];
         doubleword prod = (doubleword)multiplicand * multiplier;
@@ -495,7 +502,7 @@ class cpu
     interrupt will occur. Uses b1 and word1. RX*/
     void M(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
-        if (R1 % 2 != 0){interrupt(0x0E);}
+        if (R1 % 2 != 0){throw 0x0E;}
         word multiplicand = rgstrs.gen[(R1 + 1) % 16];
         word multiplier = getWord(getAddr(X1,B2,D2));
         doubleword prod = (doubleword)multiplicand * multiplier;
@@ -506,7 +513,7 @@ class cpu
     /*Multiplies halfword from memory with R1. Same rules apply for storing the product as other multiplication commands*/
     void MH(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
-        if (R1 % 2 != 0){interrupt(0x0E);}
+        if (R1 % 2 != 0){throw 0x0E;}
         word multiplicand = rgstrs.gen[(R1 + 1) % 16];
         word multiplier = signex16_32(getHalfword(getAddr(X1,B2,D2)));
         doubleword prod = (doubleword)multiplicand * multiplier;
@@ -562,10 +569,10 @@ class cpu
     quotient and remainder. RR*/
     void DR(byte b1, halfword word1, halfword word2){
         LOAD_RR_FIELDS
-        if (R1 % 2 != 0){interrupt(0x0E);} //Specification error
+        if (R1 % 2 != 0){throw 0x0E;} //Specification error
         doubleword dividend = (doubleword) (rgstrs.gen[R1] << 32) + rgstrs.gen[(R1 + 1) % 16];
         word divisor = rgstrs.gen[R2];
-        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){interrupt(0x09);} //Floating point divide error
+        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){throw 0x09;} //Floating point divide error
         rgstrs.gen[R1] = (word)(dividend/divisor);
         rgstrs.gen[(R1 + 1) % 16] = (word)(dividend % divisor);
     }
@@ -574,10 +581,10 @@ class cpu
     quotient and remainder. RX*/
     void D(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
-        if (R1 % 2 != 0){interrupt(0x0E);} //Specification error
+        if (R1 % 2 != 0){throw 0x0E;} //Specification error
         doubleword dividend = (doubleword) (rgstrs.gen[R1] << 32) + rgstrs.gen[(R1 + 1) % 16];
         word divisor = getWord(getAddr(X1,B2,D2));
-        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){interrupt(0x09);} //Floating point divide error
+        if (divisor == 0 || dividend / divisor > 0xFFFFFFFF){throw 0x09;} //Floating point divide error
         rgstrs.gen[R1] = (word)(dividend/divisor);
         rgstrs.gen[(R1 + 1) % 16] = (word)(dividend % divisor);
     }
@@ -585,7 +592,11 @@ class cpu
     /*Converts packed decimal number retrieved from a doubleword in memory to binary, and stores the result in R1. RX*/
     void CVB(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
-        doubleword decint = getDoubleword(getAddr(X1,B2,D2));
+        doubleword decint = (doubleword) dec64ToInt(getDoubleword(getAddr(X1,B2,D2)));
+        if (decint > 0xFFFFFFFF) {
+            //Raises fixed point divide exception if the resulting decimal digit cannot be stored in 32 bits
+            throw 0x09;
+        }
     }
 
 
@@ -610,10 +621,9 @@ class cpu
 
     /*Performs one CPU cycle*/
     void cycle(){
-        int interruptionCode = setjmp(env);
-        if (interruptionCode == 0){
+        try {
             //Normal functioning
-        } else {
+        } catch (int interruptCode) {
             //Interruption handling here
         }
     }
