@@ -94,7 +94,7 @@ enum InstructionSet {
     UNI //Universal ISA, Superset of the Standard ISA that combines the features from both the Commercial and Scientific ISAs
 };
 
-typedef void (*op)(byte,halfword,halfword);
+typedef void (cpu::*op)(byte,halfword,halfword);
 
 class cpu 
 {
@@ -184,6 +184,33 @@ class cpu
         return (rgstrs.gen[X] + rgstrs.gen[B] + D) % (1<<24);
     }
 
+    /*Writes byte to memory*/
+    inline void writeByte(byte data, word address){
+        if (address >= coreSize){throw 0x05;}
+        *(core + address) = data;
+    }
+
+    /*Writes halfword to memory*/
+    inline void writeHalfword(halfword data, word address){
+        if (address % 2 != 0){throw 0x06;}
+        writeByte(leftByte(data),address);
+        writeByte(rightByte(data),address+1);
+    }
+
+    /*Writes fullword to memory*/
+    inline void writeWord(word data, word address){
+        if (address % 4 != 0){throw 0x06;}
+        writeHalfword(leftHalfword(data),address);
+        writeHalfword(rightHalfword(data),address + 2);
+    }
+
+    /*Writes doubleword to memory*/
+    inline void writeDoubleword(doubleword data, word address){
+        if (address % 8 != 0){throw 0x06;}
+        writeWord(leftWord(data),address);
+        writeWord(rightWord(data),address + 4);
+    }
+
     /*Converts a 64-bit packed decimal into a signed integer*/
     int64_t dec64ToInt(uint64_t dec){
         char sign = dec % (1 << 4);
@@ -213,6 +240,26 @@ class cpu
                 throw 0x07;
         }
         return outint;
+    }
+
+    doubleword bin32toDec(word num){
+        char numSign;
+        if (psw.ascii) {
+            numSign = num & MAXNEG_32 ? 0b1010 : 0b1011;
+        } else {
+            numSign = num & MAXNEG_32 ? 0b1100 : 0b1101;
+        }
+        word mag = num & MAXNEG_32 ? ~num + 1 : num;
+        doubleword out = 0;
+        while (mag > 0){
+            out <<= 4;
+            int magmod = (int)pow(10,(int)log10(mag));
+            out += (mag / magmod);
+            mag %= magmod;
+        }
+        out <<= 4;
+        out += numSign;
+        return out;
     }
     //INSTRUCTION SET
 
@@ -598,12 +645,95 @@ class cpu
             //Raises fixed point divide exception if the resulting decimal digit cannot be stored in 32 bits
             throw 0x09;
         }
-
     }
 
+    /*Converts R1 to packed decimal format, which is stored as a doubleword at the memory address. RX*/
+    void CVD(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        doubleword dec = bin32toDec(rgstrs.gen[R1]);
+        writeDoubleword(dec,getAddr(X1,B2,D2));
+    }
+
+    // STD store operations
+
+    /*R1 is stored into memory at the address. RX*/
+    void ST(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        writeWord(rgstrs.gen[R1],getAddr(X1,B2,D2));
+    }
+
+    /*low order 16 bits of R1 are stored into memory at the address. RX*/
+    void STH(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        writeHalfword((halfword)rgstrs.gen[R1],getAddr(X1,B2,D2));
+    }
+
+    /*Writes multiple registers, beginning with R1 and ending with R3, to memory*/
+    void STM(byte b1, halfword word1, halfword word2){
+        LOAD_RS_FIELDS
+        word address = getAddr(0,B2,D2);
+        do {
+            writeWord(rgstrs.gen[R1],address);
+            address += 4;
+            R1 = ((R1 + 1) % 16);
+        } while (R1 != ((R3 + 1) % 16));
+    }
+
+    //Shifting
+
+    //Logic
+
+    //Branching
+    /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address stored in register R2. RR*/
+    void BCR(byte b1, halfword word1, halfword word2){
+        LOAD_RR_FIELDS
+        byte comp = (byte)pow(2,psw.cond);
+        if (R1 & comp){
+            psw.nxia = rgstrs.gen[R2];
+        }
+    }
+
+    /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address generated from X1, B2, and D2. RX*/
+    void BCX(byte b1, halfword word1, halfword word2){
+        LOAD_RX_FIELDS
+        byte comp = (byte)pow(2,psw.cond);
+        if(R1 & comp){
+            psw.nxia = getAddr(X1,B2,D2);
+        }
+    }
 
     //STD Operation List
     std::unordered_map<byte,op> stdOps;
+    
+    void generateStdOps(){
+        stdOps[0x1A] = &AR;
+        stdOps[0x5A] = &A;
+        stdOps[0x4A] = &AH;
+        stdOps[0x1A] = &AR;
+        stdOps[0x1E] = &ALR;
+        stdOps[0x5E] = &AL;
+        stdOps[0x07] = &BCR;
+        stdOps[0x1D] = &DR;
+        stdOps[0x5D] = &D;
+        stdOps[0x18] = &LR;
+        stdOps[0x58] = &L;
+        stdOps[0x13] = &LCR;
+        stdOps[0x12] = &LTR;
+        stdOps[0x48] = &LH;
+        stdOps[0x98] = &LM;
+        stdOps[0x11] = &LNR;
+        stdOps[0x10] = &LPR;
+        stdOps[0x50] = &ST;
+        stdOps[0x40] = &STH;
+        stdOps[0x90] = &STM;
+        stdOps[0x1B] = &SR;
+        stdOps[0x5B] = &S;
+        stdOps[0x4B] = &SH;
+        stdOps[0x1F] = &SLR;
+        stdOps[0x5F] = &SL;
+        stdOps[0x4F] = &CVB;
+        stdOps[0x4E] = &CVD;
+    }
     //SCI Operation List
     std::unordered_map<byte,op> sciOps;
     //COM Operation List
