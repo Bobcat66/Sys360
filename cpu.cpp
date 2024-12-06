@@ -4,6 +4,8 @@
 #include <vector>
 #include <csetjmp>
 #include <cmath>
+#include <bitset>
+#include <iomanip>
  
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
@@ -65,14 +67,14 @@ struct Registers {
 inline uint8_t leftNibble(byte in){return in/16;}
 inline uint8_t rightNibble(byte in){return in%16;}
 
-inline byte leftByte(halfword in){return (byte)in/(1 << 8);}
-inline byte rightByte(halfword in){return (byte)in%(1 << 8);}
+inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
+inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
 
-inline halfword leftHalfword(word in){return (halfword)in/(1<<16);}
-inline halfword rightHalfword(word in){return (halfword)in%(1<<16);}
+inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
+inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
 
-inline word leftWord(doubleword in){return (word)in/(1<<32);}
-inline word rightWord(doubleword in){return (word)in%(1<<32);}
+inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
+inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
 
 inline halfword displacement(halfword in){return in%(1<<12);}
 inline uint8_t baseRegister(halfword in){return in/(1<<12);}
@@ -120,6 +122,35 @@ class cpu
         }
         generateOpLens();
         generateStdOps();
+    }
+
+    void loadFibonacciTest(){
+        //Loads a simple test program that calculates the fibonacci sequence
+        rgstrs.gen[0] = 1; //First fibonacci number
+        rgstrs.gen[1] = 1; //Second fibonacci number
+        rgstrs.gen[2] = 38; //How many times to iterate the fibonacci algorithm. This will calculate the 40th number of the fibonacci sequence
+        rgstrs.gen[3] = 1; //Decrement
+        rgstrs.gen[5] = 0x00000000; //Address of begin loop instruction
+        writeHalfword(0x1A10,0);
+        writeHalfword(0x1841,2);
+        writeHalfword(0x1810,4);
+        writeHalfword(0x1804,6);
+        writeHalfword(0x1F23,8);
+        writeHalfword(0x0725,10);
+    }
+
+    void runDebug(word initialInstructionAddr){
+        psw.nxia = initialInstructionAddr;
+        cout << psw.nxia <<std::endl;
+        while (true) {
+            cin.get();
+            cout << "------------------------------------------" << std::endl;
+            cout << "PSW " << std::hex << packPSW() << std::endl;
+            cycle((word)psw.nxia);
+            for (int i = 0; i < 16; i++){
+                cout << "REG_" << i << ": " << std::hex << rgstrs.gen[i] << std::endl;
+            }
+        }
     }
 
     private:
@@ -193,6 +224,7 @@ class cpu
     inline void writeByte(byte data, word address){
         if (address >= coreSize){throw 0x05;}
         *(core + address) = data;
+        //cout << address << " " << std::bitset<8>(*(core + address)) << std::endl;
     }
 
     /*Writes halfword to memory*/
@@ -511,11 +543,14 @@ class cpu
         word sub = ~rgstrs.gen[R2] + 1;
         int carry = 0;
         word diff = min + sub;
+        //cout << std::bitset<32>(min) << std::endl;
+        //cout << std::bitset<32>(sub) << std::endl;
+        //cout << std::bitset<32>(diff) << std::endl;
         if (chkCarry(min,sub)){
             carry++;
         }
         rgstrs.gen[R1] = diff;
-        psw.cond = (carry < 1) + (diff == 0 ? 0 : 1);
+        psw.cond = (carry << 1) + (diff == 0 ? 0 : 1);
     }
 
     /*Performs Logical subtract between R1 and a Word loaded from the address. Result is stored in R1. Uses b1 and word1. RX*/
@@ -696,6 +731,7 @@ class cpu
         if (R1 & comp){
             psw.nxia = rgstrs.gen[R2];
         }
+        //cout << "RUNNING BCR" << std::endl;
     }
 
     /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address generated from X1, B2, and D2. RX*/
@@ -786,16 +822,17 @@ class cpu
             }
         }
         //The operation not being found is undefined behavior
-        cout << "UNDEFINED BEHAVIOR ERROR: INSTRUCTION " << opcode << " IS NOT DEFINED UNDER THE CURRENT ISA" << std::endl;
+        cout << "UNDEFINED BEHAVIOR ERROR: INSTRUCTION " << std::hex << opcode << " IS NOT DEFINED UNDER THE CURRENT ISA" << std::endl;
     }
 
     /*Performs one CPU cycle*/
     void cycle(word instructionAddress){
         try {
             byte opcode = getByte(instructionAddress);
+            //cout << opcode << std::endl;
             op operation = getOperation(opcode);
-            psw.nxia += 1; //Increases instruction counter, can be overridden by the actual operation
             psw.ilc = opLens.at(opcode);
+            psw.nxia += (2*psw.ilc); //Increases instruction counter, can be overridden by the actual operation
             switch (psw.ilc){
                 case 1:
                     (this->*operation)(getByte(instructionAddress + 1),0,0);
@@ -824,5 +861,8 @@ class cpu
 
 int main(){
     cout << "CPU TEST" << std::endl;
+    cpu testCPU = cpu(50,STD);
+    testCPU.loadFibonacciTest();
+    testCPU.runDebug(0);
     return 0;
 }
