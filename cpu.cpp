@@ -94,6 +94,8 @@ enum InstructionSet {
     UNI //Universal ISA, Superset of the Standard ISA that combines the features from both the Commercial and Scientific ISAs
 };
 
+class cpu;
+
 typedef void (cpu::*op)(byte,halfword,halfword);
 
 class cpu 
@@ -709,33 +711,33 @@ class cpu
     std::unordered_map<byte,op> stdOps;
     
     void generateStdOps(){
-        stdOps[0x1A] = &AR;
-        stdOps[0x5A] = &A;
-        stdOps[0x4A] = &AH;
-        stdOps[0x1A] = &AR;
-        stdOps[0x1E] = &ALR;
-        stdOps[0x5E] = &AL;
-        stdOps[0x07] = &BCR;
-        stdOps[0x1D] = &DR;
-        stdOps[0x5D] = &D;
-        stdOps[0x18] = &LR;
-        stdOps[0x58] = &L;
-        stdOps[0x13] = &LCR;
-        stdOps[0x12] = &LTR;
-        stdOps[0x48] = &LH;
-        stdOps[0x98] = &LM;
-        stdOps[0x11] = &LNR;
-        stdOps[0x10] = &LPR;
-        stdOps[0x50] = &ST;
-        stdOps[0x40] = &STH;
-        stdOps[0x90] = &STM;
-        stdOps[0x1B] = &SR;
-        stdOps[0x5B] = &S;
-        stdOps[0x4B] = &SH;
-        stdOps[0x1F] = &SLR;
-        stdOps[0x5F] = &SL;
-        stdOps[0x4F] = &CVB;
-        stdOps[0x4E] = &CVD;
+        stdOps[0x1A] = &cpu::AR;
+        stdOps[0x5A] = &cpu::A;
+        stdOps[0x4A] = &cpu::AH;
+        stdOps[0x1A] = &cpu::AR;
+        stdOps[0x1E] = &cpu::ALR;
+        stdOps[0x5E] = &cpu::AL;
+        stdOps[0x07] = &cpu::BCR;
+        stdOps[0x1D] = &cpu::DR;
+        stdOps[0x5D] = &cpu::D;
+        stdOps[0x18] = &cpu::LR;
+        stdOps[0x58] = &cpu::L;
+        stdOps[0x13] = &cpu::LCR;
+        stdOps[0x12] = &cpu::LTR;
+        stdOps[0x48] = &cpu::LH;
+        stdOps[0x98] = &cpu::LM;
+        stdOps[0x11] = &cpu::LNR;
+        stdOps[0x10] = &cpu::LPR;
+        stdOps[0x50] = &cpu::ST;
+        stdOps[0x40] = &cpu::STH;
+        stdOps[0x90] = &cpu::STM;
+        stdOps[0x1B] = &cpu::SR;
+        stdOps[0x5B] = &cpu::S;
+        stdOps[0x4B] = &cpu::SH;
+        stdOps[0x1F] = &cpu::SLR;
+        stdOps[0x5F] = &cpu::SL;
+        stdOps[0x4F] = &cpu::CVB;
+        stdOps[0x4E] = &cpu::CVD;
     }
     //SCI Operation List
     std::unordered_map<byte,op> sciOps;
@@ -796,13 +798,13 @@ class cpu
             psw.ilc = opLens.at(opcode);
             switch (psw.ilc){
                 case 1:
-                    operation(getByte(instructionAddress + 1),0,0);
+                    (this->*operation)(getByte(instructionAddress + 1),0,0);
                     break;
                 case 2:
-                    operation(getByte(instructionAddress + 1),getHalfword(instructionAddress+2));
+                    (this->*operation)(getByte(instructionAddress + 1),getHalfword(instructionAddress+2),0);
                     break;
                 case 3:
-                    operation(getByte(instructionAddress + 1),getHalfword(instructionAddress+2),getHalfword(instructionAddress+4));
+                    (this->*operation)(getByte(instructionAddress + 1),getHalfword(instructionAddress+2),getHalfword(instructionAddress+4));
                     break;
             }
         } catch (int interruptCode) {
@@ -819,3 +821,8 @@ class cpu
         }
     }
 };
+
+int main(){
+    cout << "CPU TEST" << std::endl;
+    return 0;
+}
