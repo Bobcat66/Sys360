@@ -116,10 +116,13 @@ class cpu
                 usedOpLists.push_back(&comOps);
                 break;
         }
+        generateOpLens();
+        generateStdOps();
     }
 
     private:
 
+    bool runAuto = false; //Flag to check whether the CPU is running in auto mode
     enum InstructionSet ISA;
     int coreSize = 0;
     byte *core;
@@ -739,6 +742,39 @@ class cpu
     //COM Operation List
     std::unordered_map<byte,op> comOps;
 
+    //Operation lengths (in halfwords)
+    std::unordered_map<byte,int> opLens;
+    
+    void generateOpLens(){
+        opLens[0x1A] = 1;
+        opLens[0x5A] = 2;
+        opLens[0x4A] = 2;
+        opLens[0x1A] = 1;
+        opLens[0x1E] = 1;
+        opLens[0x5E] = 2;
+        opLens[0x07] = 1;
+        opLens[0x1D] = 1;
+        opLens[0x5D] = 2;
+        opLens[0x18] = 1;
+        opLens[0x58] = 2;
+        opLens[0x13] = 1;
+        opLens[0x12] = 1;
+        opLens[0x48] = 2;
+        opLens[0x98] = 2;
+        opLens[0x11] = 1;
+        opLens[0x10] = 1;
+        opLens[0x50] = 2;
+        opLens[0x40] = 2;
+        opLens[0x90] = 2;
+        opLens[0x1B] = 1;
+        opLens[0x5B] = 2;
+        opLens[0x4B] = 2;
+        opLens[0x1F] = 1;
+        opLens[0x5F] = 2;
+        opLens[0x4F] = 2;
+        opLens[0x4E] = 2;
+    }
+
     op getOperation(byte opcode){
         for (std::unordered_map<byte,op>* opList : usedOpLists){
             try {
@@ -752,11 +788,34 @@ class cpu
     }
 
     /*Performs one CPU cycle*/
-    void cycle(){
+    void cycle(word instructionAddress){
         try {
-            //Normal functioning
+            byte opcode = getByte(instructionAddress);
+            op operation = getOperation(opcode);
+            psw.nxia += 1; //Increases instruction counter, can be overridden by the actual operation
+            psw.ilc = opLens.at(opcode);
+            switch (psw.ilc){
+                case 1:
+                    operation(getByte(instructionAddress + 1),0,0);
+                    break;
+                case 2:
+                    operation(getByte(instructionAddress + 1),getHalfword(instructionAddress+2));
+                    break;
+                case 3:
+                    operation(getByte(instructionAddress + 1),getHalfword(instructionAddress+2),getHalfword(instructionAddress+4));
+                    break;
+            }
         } catch (int interruptCode) {
             //Interruption handling here
+        }
+    }
+
+    /*Begins CPU in auto mode*/
+    void startAuto(word initialAddress){
+        psw.nxia = initialAddress;
+        runAuto = true;
+        while (runAuto) {
+            cycle((word)psw.nxia);
         }
     }
 };
