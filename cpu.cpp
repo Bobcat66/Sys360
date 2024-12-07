@@ -6,6 +6,8 @@
 #include <cmath>
 #include <bitset>
 #include <iomanip>
+
+#include "helpers.h"
  
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
@@ -31,6 +33,7 @@
 
 using std::cin;
 using std::cout;
+using std::iostream;
 
 using doubleword = uint64_t;
 using word = uint32_t;
@@ -42,8 +45,6 @@ constexpr doubleword MAXNEG_64 =  0b10000000000000000000000000000000000000000000
 constexpr word MAXNEG_32 =        0b10000000000000000000000000000000; //Most negative int32, expressed as an unsigned int32
 constexpr halfword MAXNEG_16 =    0b1000000000000000; //Most negative int16, expressed as an unsigned int16
 constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as an unsigned int8
-//Program buffer for handling interrupts
-jmp_buf env;
 
 typedef struct ProgramStatusWordStruct {
     unsigned int smsk : 8; //System Mask, Controls interruptions. Bits 0-5 enable channels 0-5, bit 6 enables all remaining channels, and bit 7 enables external interruptions
@@ -103,6 +104,7 @@ typedef void (cpu::*op)(byte,halfword,halfword);
 class cpu 
 {
     public:
+    friend class Channel;
     cpu(int memSize, enum InstructionSet instructionSet){
         ISA = instructionSet;
         coreSize = memSize;
@@ -131,12 +133,12 @@ class cpu
         rgstrs.gen[2] = 38; //How many times to iterate the fibonacci algorithm. This will calculate the 40th number of the fibonacci sequence
         rgstrs.gen[3] = 1; //Decrement
         rgstrs.gen[5] = 0x00000000; //Address of begin loop instruction
-        writeHalfword(0x1A10,0);
-        writeHalfword(0x1841,2);
-        writeHalfword(0x1810,4);
-        writeHalfword(0x1804,6);
-        writeHalfword(0x1F23,8);
-        writeHalfword(0x0725,10);
+        writeHalfword(0x1A10,0); //Add register 0 to register 1
+        writeHalfword(0x1841,2); //Load register 1 into register 4
+        writeHalfword(0x1810,4); //Load register 0 into register 1
+        writeHalfword(0x1804,6); //Load register 4 into register 0
+        writeHalfword(0x1F23,8); //Logical subtract register 3 from register 2
+        writeHalfword(0x0725,10); //If psw condition = 2, set ic to address 0
     }
 
     void runDebug(word initialInstructionAddr){
@@ -733,7 +735,6 @@ class cpu
         }
         //cout << "RUNNING BCR" << std::endl;
     }
-
     /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address generated from X1, B2, and D2. RX*/
     void BCX(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
@@ -742,6 +743,9 @@ class cpu
             psw.nxia = getAddr(X1,B2,D2);
         }
     }
+
+    //IO Commands
+
 
     //STD Operation List
     std::unordered_map<byte,op> stdOps;
