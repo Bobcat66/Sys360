@@ -2,13 +2,12 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-#include <csetjmp>
 #include <cmath>
 #include <bitset>
 #include <iomanip>
-
 #include "helpers.h"
- 
+#include "memory.h"
+
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
 #define CHANNEL1 0b01000000
@@ -41,14 +40,14 @@ using halfword = uint16_t;
 using byte = uint8_t;
 
 //Most negative constexprs
-constexpr doubleword MAXNEG_64 =  0b1000000000000000000000000000000000000000000000000000000000000000; //Most negative int64, expressed as an unsigned int64
-constexpr word MAXNEG_32 =        0b10000000000000000000000000000000; //Most negative int32, expressed as an unsigned int32
-constexpr halfword MAXNEG_16 =    0b1000000000000000; //Most negative int16, expressed as an unsigned int16
-constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as an unsigned int8
+//constexpr doubleword MAXNEG_64 =  0b1000000000000000000000000000000000000000000000000000000000000000; //Most negative int64, expressed as an unsigned int64
+//constexpr word MAXNEG_32 =        0b10000000000000000000000000000000; //Most negative int32, expressed as an unsigned int32
+//constexpr halfword MAXNEG_16 =    0b1000000000000000; //Most negative int16, expressed as an unsigned int16
+//constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as an unsigned int8
 
 typedef struct ProgramStatusWordStruct {
     unsigned int smsk : 8; //System Mask, Controls interruptions. Bits 0-5 enable channels 0-5, bit 6 enables all remaining channels, and bit 7 enables external interruptions
-    unsigned int key : 4; //CPU protection key. The IBM System/360 implemented an early form of ECC Memory, and used this register for it. However, this System/360 Emulator relies on the host system's memory, which almost certainly is not ECC (unless the host system happens to be an enterprise-grade server or workstation), so ECC-related functionality has been omitted. However, in the name of authenticity, this register has been left in the code. Think of it as something of an easter egg.
+    unsigned int key : 4; //CPU protection key. This is compared with storage protection key. Setting this key to 0 gives unlimited access to memory
     unsigned int ascii : 1; //Controls whether or not the CPU will operate in ASCII mode
     unsigned int mchk : 1; //Enables machine-check interruption
     unsigned int wait : 1; //Enables wait state
@@ -65,17 +64,17 @@ struct Registers {
     doubleword fp[4]; //Floating-point registers
 };
 
-inline uint8_t leftNibble(byte in){return in/16;}
-inline uint8_t rightNibble(byte in){return in%16;}
+//inline uint8_t leftNibble(byte in){return in/16;}
+//inline uint8_t rightNibble(byte in){return in%16;}
 
-inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
-inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
+//inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
+//inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
 
-inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
-inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
+//inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
+//inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
 
-inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
-inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
+//inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
+//inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
 
 inline halfword displacement(halfword in){return in%(1<<12);}
 inline uint8_t baseRegister(halfword in){return in/(1<<12);}
@@ -107,8 +106,7 @@ class cpu
     friend class Channel;
     cpu(int memSize, enum InstructionSet instructionSet){
         ISA = instructionSet;
-        coreSize = memSize;
-        core = new byte[memSize];
+        core = new memory(memSize);
         usedOpLists.push_back(&stdOps);
         switch(ISA){
             case SCI:
@@ -159,8 +157,7 @@ class cpu
 
     bool runAuto = false; //Flag to check whether the CPU is running in auto mode
     enum InstructionSet ISA;
-    int coreSize = 0;
-    byte *core;
+    memory *core;
     std::vector<std::unordered_map<byte,op>*> usedOpLists;
     bool interruptFlag = false; //Flag that indicates whether or not the program has been interrupted
 
@@ -198,8 +195,7 @@ class cpu
 
     /*Returns the byte stored at the address. WARNING: possibly memory-unsafe*/
     inline byte getByte(word address){
-        if (address >= coreSize){throw 0x05;}
-        return *(core + address);
+        return core->getByte(address,psw.key);
     }
     /*Returns the halfword stored at the address. WARNING: possibly memory-unsafe*/
     inline halfword getHalfword(word address){
@@ -224,8 +220,7 @@ class cpu
 
     /*Writes byte to memory*/
     inline void writeByte(byte data, word address){
-        if (address >= coreSize){throw 0x05;}
-        *(core + address) = data;
+        core->writeByte(address,data,psw.key);
         //cout << address << " " << std::bitset<8>(*(core + address)) << std::endl;
     }
 
