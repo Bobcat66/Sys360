@@ -20,17 +20,20 @@ class channel {
     channel(memory* coreptr);
     ~channel();
     void addDevice(int addr, std::iostream* devptr);
+    void startIO(int devaddr);
+    word packCSW();
     private:
+    int devaddr;
     channelstatus csw;
     memory* coreptr;
     std::unordered_map<int,std::iostream*> devices;
-    std::vector<byte> inBuffer;
-    std::vector<byte> outBuffer;
-    void readDevToIBuf(int devaddr,int numbytes);
-    void writeOBufToDev(int devaddr,int numbytes);
-    void writeIBufToCore(word memaddr,int numbytes);
-    void readCoreToOBuf(word memaddr,int numbytes);
+    char buffer[256];
+    void readDevToBuf(int devaddr,int numchars);
+    void writeBufToDev(int devaddr,int numchars);
+    void writeBufToCore(word memaddr,int numbytes);
+    void readCoreToBuf(word memaddr,int numbytes);
     void fetchCAW();
+    doubleword fetchCCW(); //Fetches channel command word
     void cycle();
 };
 #endif

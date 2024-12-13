@@ -1,0 +1,74 @@
+CKDDASD IMAGE FILE FORMAT SPECIFICATION
+
+file extension: .ckdd
+
+a CKDDASD Image file is broken up into two sections: the HEADER, and the DATA. the HEADER defines the structure of the DASD, and has three fields:
+BINS: A 16 bit field expressing the number of bins (for compatibility with the 2321 data cells)
+NUM_CYLINDERS: A 16 bit field expressing the number of cylinders per bin
+NUM_TRACKS: A 16 bit field expressing the number of tracks per cylinder
+TRACK_SIZE: A 16 bit field expressing the size of a track in bytes
+Directly after the header is the data. The data is subdivided into BINS bins, which are each subdivided into NUM_CYLINDERS cylinders, whose size is NUM_TRACKS * TRACK_SIZE bytes. There are no boundary bits between bins, cylinders, or tracks
+
+Layout of an example CKDDASD Image file:
+METADATA:
+NUM_BINS: 2 bytes
+NUM_CYLINDERS: 2 bytes
+NUM_TRACKS: 2 bytes
+TRACK_SIZE: 2 bytes
+LOOKUP_TABLE_LEN: 2 bytes
+LOOKUP_TABLE
+    BINS : 64 bytes each
+        BIN0_POS
+        BIN1_POS
+    CYLINDERS : 64 bytes each
+        CYLINDER0_OFFSET
+        CYLINDER1_OFFSET
+        CYLINDER2_OFFSET
+        CYLINDER3_OFFSET
+        CYLINDER4_OFFSET
+    TRACKS : 64 bytes each
+        TRACK0_OFFSET
+        TRACK1_OFFSET
+        TRACK2_OFFSET
+BIN0
+    CYLINDER0
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER1
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER2
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER3
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER4
+        TRACK0
+        TRACK1
+        TRACK2
+BIN0
+    CYLINDER0
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER1
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER2
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER3
+        TRACK0
+        TRACK1
+        TRACK2
+    CYLINDER4
+        TRACK0
+        TRACK1
+        TRACK2
