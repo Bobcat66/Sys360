@@ -5,6 +5,8 @@ inline halfword getCylinders(doubleword header){return (header % (1 << 48)) / (1
 inline halfword getTracks(doubleword header){return (header % (1 << 32)) / (1 << 16);}
 inline halfword getTsize(doubleword header){return header % (1 << 16);}
 
+inline doubleword getRecordAddr(doubleword count){return count/(1 << 3);}
+
 ckddasd::ckddasd(std::string dataName){
     this->dataName = dataName;
     datastream.open(dataName,std::fstream::in | std::fstream::binary);
@@ -22,7 +24,7 @@ void ckddasd::seekBin(){
 }
 
 void ckddasd::seekCylinder(){
-    int cylinderSize = 0;//hdrInfo.tsize * hdrInfo.tracks;
+    int cylinderSize = getTsize(header) * getTracks(header);
     seekBin();
     if (writeMode) {
         datastream.seekp(datastream.tellp() + (ptrInfo.cylinder * cylinderSize));
@@ -32,8 +34,18 @@ void ckddasd::seekCylinder(){
 }
 
 void ckddasd::seekTrack(){
+    int trackSize = getTsize(header);
     seekCylinder();
-    word count;
+    if (writeMode) {
+        datastream.seekp(datastream.tellp() + (ptrInfo.track * trackSize));
+    } else {
+        datastream.seekg(datastream.tellg() + (ptrInfo.track * trackSize));
+    }
+}
+
+void ckddasd::seekRecord(){
+    seekTrack();
+    doubleword count;
     char* key;
     datastream.read(reinterpret_cast<char*>(&count),8);
 }
