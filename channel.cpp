@@ -1,16 +1,17 @@
-
+#include <mutex>
 #include "channel.h"
 
-channel::channel(memory* coreptr){
+channel::channel(std::shared_ptr<memory> coreptr){
     this->coreptr = coreptr;
     csw = {0,0,0,0,0};
 }
 
-void channel::addDevice(int addr, std::iostream* devptr){
+void channel::addDevice(int addr, iodevice* devptr){
     devices[addr] = devptr;
 }
 
 void channel::fetchCAW(){
+    std::lock_guard<std::mutex> memlock(coreptr->mtx);
     csw.key = coreptr->getByte((word)72,0);
     csw.pc = ((word)(coreptr->getByte((word)74,0)) << 16) + ((word)(coreptr->getByte((word)75,0)) << 8) + ((word)(coreptr->getByte((word)76,0)));
 }
@@ -26,18 +27,21 @@ void channel::writeBufToDev(int devaddr, int numchars){
 }
 
 void channel::writeBufToCore(word memaddr, int numbytes){
+    std::lock_guard<std::mutex> memlock(coreptr->mtx);
     for (int i = 0; i < numbytes; i++){
         coreptr->writeByte(memaddr + i,(byte) buffer[i],csw.key);
     }
 }
 
 void channel::readCoreToBuf(word memaddr, int numbytes){
+    std::lock_guard<std::mutex> memlock(coreptr->mtx);
     for (int i = 0; i < numbytes; i++){
         buffer[i] = (char) coreptr->getByte(memaddr+i,csw.key);
     }
 }
 
 doubleword channel::fetchCCW(){
+    std::lock_guard<std::mutex> memlock(coreptr->mtx);
     doubleword ccw = 
     ((doubleword)(coreptr->getByte((word)csw.pc,0)) << 56) + 
     ((doubleword)(coreptr->getByte((word)csw.pc+1,0)) << 48) + 

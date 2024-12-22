@@ -5,6 +5,7 @@
 #include <cmath>
 #include <bitset>
 #include <iomanip>
+#include <memory>
 #include "helpers.h"
 #include "memory.h"
 
@@ -106,7 +107,7 @@ class cpu
     friend class Channel;
     cpu(int memSize, enum InstructionSet instructionSet){
         ISA = instructionSet;
-        core = new memory(memSize);
+        core = std::make_shared<memory>(memSize);
         usedOpLists.push_back(&stdOps);
         switch(ISA){
             case SCI:
@@ -157,7 +158,7 @@ class cpu
 
     bool runAuto = false; //Flag to check whether the CPU is running in auto mode
     enum InstructionSet ISA;
-    memory *core;
+    std::shared_ptr<memory> core;
     std::vector<std::unordered_map<byte,op>*> usedOpLists;
     bool interruptFlag = false; //Flag that indicates whether or not the program has been interrupted
 
@@ -195,6 +196,7 @@ class cpu
 
     /*Returns the byte stored at the address. WARNING: possibly memory-unsafe*/
     inline byte getByte(word address){
+        std::lock_guard<std::mutex> memlock(core->mtx);
         return core->getByte(address,psw.key);
     }
     /*Returns the halfword stored at the address. WARNING: possibly memory-unsafe*/
@@ -220,6 +222,7 @@ class cpu
 
     /*Writes byte to memory*/
     inline void writeByte(byte data, word address){
+        std::lock_guard<std::mutex> memlock(core->mtx);
         core->writeByte(address,data,psw.key);
         //cout << address << " " << std::bitset<8>(*(core + address)) << std::endl;
     }

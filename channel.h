@@ -3,9 +3,11 @@
 
 #include "helpers.h"
 #include "memory.h"
+#include "iodevice.h"
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <memory>
 
 struct channelstatus {
     unsigned int key : 4; //Storage Protection Key
@@ -17,16 +19,16 @@ struct channelstatus {
 
 class channel {
     public:
-    channel(memory* coreptr);
+    channel(std::shared_ptr<memory> coreptr);
     ~channel();
-    void addDevice(int addr, std::iostream* devptr);
+    void addDevice(int addr, iodevice* devptr);
     void startIO(int devaddr);
     word packCSW();
     private:
     int devaddr;
     channelstatus csw;
-    memory* coreptr;
-    std::unordered_map<int,std::iostream*> devices;
+    std::shared_ptr<memory> coreptr;
+    std::unordered_map<int,iodevice*> devices;
     char buffer[256];
     void readDevToBuf(int devaddr,int numchars);
     void writeBufToDev(int devaddr,int numchars);

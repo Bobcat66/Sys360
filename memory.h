@@ -2,6 +2,8 @@
 #define MEMORY_H
 
 #include <vector>
+#include <array>
+#include <mutex>
 #include "helpers.h"
 
 struct block;
@@ -10,6 +12,7 @@ class memory {
     public:
     memory(int blknum);
     ~memory();
+    std::mutex mtx;
     byte getByte(word memaddr,unsigned int key);
     void writeByte(word memaddr,byte data,unsigned int key);
     void setKey(word blockaddr,unsigned int newkey);

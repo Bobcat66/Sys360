@@ -9,6 +9,7 @@ NUM_TRACKS: A 16 bit field expressing the number of tracks per cylinder
 TRACK_SIZE: A 16 bit field expressing the size of a track in bytes
 Directly after the header is the data. The data is subdivided into BINS bins, which are each subdivided into NUM_CYLINDERS cylinders, whose size is NUM_TRACKS * TRACK_SIZE bytes. There are no boundary bits between bins, cylinders, or tracks
 
+
 Layout of an example CKDDASD Image file:
 METADATA:
 NUM_BINS: 2 bytes
