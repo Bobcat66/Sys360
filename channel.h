@@ -36,6 +36,7 @@ class channel {
     void readCoreToBuf(word memaddr,int numbytes);
     void fetchCAW();
     doubleword fetchCCW(); //Fetches channel command word
+    void run(); //Function that runs a channel program in a separate thread
     void cycle();
 };
 #endif

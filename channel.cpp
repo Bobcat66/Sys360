@@ -1,4 +1,5 @@
 #include <mutex>
+#include <thread>
 #include "channel.h"
 
 channel::channel(std::shared_ptr<memory> coreptr){
@@ -58,6 +59,16 @@ doubleword channel::fetchCCW(){
 void channel::cycle(){
     doubleword ccw = fetchCCW();
     
+}
+
+//TODO: Add interruptions and exception handling
+void channel::run(){
+    cycle();
+}
+
+void channel::startIO(int devaddr){
+    this->devaddr = devaddr;
+    std::thread iothread(&channel::run,this);
 }
 
 
