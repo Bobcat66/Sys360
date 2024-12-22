@@ -13,6 +13,8 @@ class iodevice {
     virtual void readBkwd(char* buffer, byte opcode); //Chars are read into buffer
     virtual void open(); //Opens device for IO
     virtual void close(); //Closes device
+    byte senseData;
+    byte senseKey;
 };
 
 #endif
