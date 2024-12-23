@@ -158,6 +158,8 @@ char etoacp[] = {
     0x13,   //0x13
 };
 
+//These codepages were copied from the Hercules Emulator
+
 /*--------------------------------------------------------------------------*/
 /* ISO/ANSI ASCII to CECP 037 */
 
