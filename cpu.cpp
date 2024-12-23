@@ -2,11 +2,13 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-#include <csetjmp>
 #include <cmath>
 #include <bitset>
 #include <iomanip>
- 
+#include <memory>
+#include "helpers.h"
+#include "memory.h"
+
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
 #define CHANNEL1 0b01000000
@@ -31,6 +33,7 @@
 
 using std::cin;
 using std::cout;
+using std::iostream;
 
 using doubleword = uint64_t;
 using word = uint32_t;
@@ -38,16 +41,14 @@ using halfword = uint16_t;
 using byte = uint8_t;
 
 //Most negative constexprs
-constexpr doubleword MAXNEG_64 =  0b1000000000000000000000000000000000000000000000000000000000000000; //Most negative int64, expressed as an unsigned int64
-constexpr word MAXNEG_32 =        0b10000000000000000000000000000000; //Most negative int32, expressed as an unsigned int32
-constexpr halfword MAXNEG_16 =    0b1000000000000000; //Most negative int16, expressed as an unsigned int16
-constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as an unsigned int8
-//Program buffer for handling interrupts
-jmp_buf env;
+//constexpr doubleword MAXNEG_64 =  0b1000000000000000000000000000000000000000000000000000000000000000; //Most negative int64, expressed as an unsigned int64
+//constexpr word MAXNEG_32 =        0b10000000000000000000000000000000; //Most negative int32, expressed as an unsigned int32
+//constexpr halfword MAXNEG_16 =    0b1000000000000000; //Most negative int16, expressed as an unsigned int16
+//constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as an unsigned int8
 
 typedef struct ProgramStatusWordStruct {
     unsigned int smsk : 8; //System Mask, Controls interruptions. Bits 0-5 enable channels 0-5, bit 6 enables all remaining channels, and bit 7 enables external interruptions
-    unsigned int key : 4; //CPU protection key. The IBM System/360 implemented an early form of ECC Memory, and used this register for it. However, this System/360 Emulator relies on the host system's memory, which almost certainly is not ECC (unless the host system happens to be an enterprise-grade server or workstation), so ECC-related functionality has been omitted. However, in the name of authenticity, this register has been left in the code. Think of it as something of an easter egg.
+    unsigned int key : 4; //CPU protection key. This is compared with storage protection key. Setting this key to 0 gives unlimited access to memory
     unsigned int ascii : 1; //Controls whether or not the CPU will operate in ASCII mode
     unsigned int mchk : 1; //Enables machine-check interruption
     unsigned int wait : 1; //Enables wait state
@@ -64,17 +65,17 @@ struct Registers {
     doubleword fp[4]; //Floating-point registers
 };
 
-inline uint8_t leftNibble(byte in){return in/16;}
-inline uint8_t rightNibble(byte in){return in%16;}
+//inline uint8_t leftNibble(byte in){return in/16;}
+//inline uint8_t rightNibble(byte in){return in%16;}
 
-inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
-inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
+//inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
+//inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
 
-inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
-inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
+//inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
+//inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
 
-inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
-inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
+//inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
+//inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
 
 inline halfword displacement(halfword in){return in%(1<<12);}
 inline uint8_t baseRegister(halfword in){return in/(1<<12);}
@@ -103,10 +104,10 @@ typedef void (cpu::*op)(byte,halfword,halfword);
 class cpu 
 {
     public:
+    friend class Channel;
     cpu(int memSize, enum InstructionSet instructionSet){
         ISA = instructionSet;
-        coreSize = memSize;
-        core = new byte[memSize];
+        core = std::make_shared<memory>(memSize);
         usedOpLists.push_back(&stdOps);
         switch(ISA){
             case SCI:
@@ -131,12 +132,12 @@ class cpu
         rgstrs.gen[2] = 38; //How many times to iterate the fibonacci algorithm. This will calculate the 40th number of the fibonacci sequence
         rgstrs.gen[3] = 1; //Decrement
         rgstrs.gen[5] = 0x00000000; //Address of begin loop instruction
-        writeHalfword(0x1A10,0);
-        writeHalfword(0x1841,2);
-        writeHalfword(0x1810,4);
-        writeHalfword(0x1804,6);
-        writeHalfword(0x1F23,8);
-        writeHalfword(0x0725,10);
+        writeHalfword(0x1A10,0); //Add register 0 to register 1
+        writeHalfword(0x1841,2); //Load register 1 into register 4
+        writeHalfword(0x1810,4); //Load register 0 into register 1
+        writeHalfword(0x1804,6); //Load register 4 into register 0
+        writeHalfword(0x1F23,8); //Logical subtract register 3 from register 2
+        writeHalfword(0x0725,10); //If psw condition = 2, set ic to address 0
     }
 
     void runDebug(word initialInstructionAddr){
@@ -157,8 +158,7 @@ class cpu
 
     bool runAuto = false; //Flag to check whether the CPU is running in auto mode
     enum InstructionSet ISA;
-    int coreSize = 0;
-    byte *core;
+    std::shared_ptr<memory> core;
     std::vector<std::unordered_map<byte,op>*> usedOpLists;
     bool interruptFlag = false; //Flag that indicates whether or not the program has been interrupted
 
@@ -196,8 +196,8 @@ class cpu
 
     /*Returns the byte stored at the address. WARNING: possibly memory-unsafe*/
     inline byte getByte(word address){
-        if (address >= coreSize){throw 0x05;}
-        return *(core + address);
+        std::lock_guard<std::mutex> memlock(core->mtx);
+        return core->getByte(address,psw.key);
     }
     /*Returns the halfword stored at the address. WARNING: possibly memory-unsafe*/
     inline halfword getHalfword(word address){
@@ -222,8 +222,8 @@ class cpu
 
     /*Writes byte to memory*/
     inline void writeByte(byte data, word address){
-        if (address >= coreSize){throw 0x05;}
-        *(core + address) = data;
+        std::lock_guard<std::mutex> memlock(core->mtx);
+        core->writeByte(address,data,psw.key);
         //cout << address << " " << std::bitset<8>(*(core + address)) << std::endl;
     }
 
@@ -733,7 +733,6 @@ class cpu
         }
         //cout << "RUNNING BCR" << std::endl;
     }
-
     /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address generated from X1, B2, and D2. RX*/
     void BCX(byte b1, halfword word1, halfword word2){
         LOAD_RX_FIELDS
@@ -742,6 +741,9 @@ class cpu
             psw.nxia = getAddr(X1,B2,D2);
         }
     }
+
+    //IO Commands
+
 
     //STD Operation List
     std::unordered_map<byte,op> stdOps;
