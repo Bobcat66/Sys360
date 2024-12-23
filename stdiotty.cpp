@@ -13,3 +13,28 @@ void stdiotty::write(char* buffer, byte opcode){
             std::cout << buffer;
     }
 }
+
+//TODO: Implement
+void stdiotty::control(char* buffer, byte opcode){
+    return;
+}
+
+//TODO: Implement
+void stdiotty::sense(char* buffer, byte opcode){
+    return;
+}
+
+//TODO: Implement
+void stdiotty::readBkwd(char* buffer, byte opcode){
+    return;
+}
+
+//TODO: Implement
+void stdiotty::open(){
+    return;
+}
+
+//TODO: Implement
+void stdiotty::close(){
+    return;
+}

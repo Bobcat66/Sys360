@@ -9,6 +9,11 @@ class stdiotty : public iodevice {
     public:
     void read(char* buffer, byte opcode) override;
     void write(char* buffer, byte opcode) override;
+    void control(char* buffer, byte opcode) override;
+    void sense(char* buffer, byte opcode) override;
+    void readBkwd(char* buffer, byte opcode) override;
+    void open() override;
+    void close() override;
 };
 
 #endif

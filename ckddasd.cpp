@@ -137,6 +137,16 @@ void ckddasd::control(char* buffer, byte opcode){
     }
 }
 
+//TODO: Implement
+void ckddasd::sense(char* buffer, byte opcode){
+    return;
+}
+
+//TODO: Implement
+void ckddasd::readBkwd(char* buffer, byte opcode){
+    return;
+}
+
 /* PRIVATE */
 
 void ckddasd::clearTrackRecords(){

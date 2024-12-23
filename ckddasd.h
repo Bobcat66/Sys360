@@ -25,8 +25,6 @@ struct trackMetadata {
     std::vector<record*> records;
 };
 
-typedef void (ckddasd::*iocom)(char* buffer);
-
 class ckddasd : public iodevice {
     public:
     ckddasd(std::string dataName);

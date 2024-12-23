@@ -8,6 +8,7 @@
 #include <memory>
 #include "helpers.h"
 #include "memory.h"
+#include "codepage.h"
 
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
@@ -865,6 +866,9 @@ int main(){
     cout << "CPU TEST" << std::endl;
     cpu testCPU = cpu(50,STD);
     testCPU.loadFibonacciTest();
-    testCPU.runDebug(0);
+    //testCPU.runDebug(0);
+    char str[14] = "\x48\x65\x6C\x6C\x6F\x2C\x20\x57\x6F\x72\x6C\x64\x21";
+    translate(str,isoansi_to_cecp037);
+    cout << str;
     return 0;
 }
