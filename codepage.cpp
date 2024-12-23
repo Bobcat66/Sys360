@@ -1,4 +1,5 @@
-#include <codepage.h>
+#include <string.h>
+#include "codepage.h"
 
 //Table for converting ASCII to EBCDIC
 unsigned char atoecp[] = {
@@ -1150,3 +1151,10 @@ cp_1140_to_1252[] = {
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
 /*--------------------------------------------------------------------------*/
+
+void translate(char* string, unsigned char* codepage){
+    int len = strlen(string);
+    for (int i = 0;i < len;i++){
+        string[i] = *(codepage + (unsigned char)string[i]);
+    }
+}
