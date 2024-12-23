@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 #include "codepage.h"
 
 //Table for converting ASCII to EBCDIC
@@ -159,13 +159,24 @@ char etoacp[] = {
     0x13,   //0x13
 };
 
+encode::encode(unsigned char* codepage){
+    this->codepage = codepage;
+};
+
+void encode::operator()(char* string){
+    int len = strlen(string);
+    for (int i = 0; i < len; i++){
+        string[i] = *(codepage + (unsigned char)string[i]);
+    }
+}
+
 //These codepages were copied from the Hercules Emulator
 
 /*--------------------------------------------------------------------------*/
 /* ISO/ANSI ASCII to CECP 037 */
 
-static unsigned char
-ind_file_a_to_e[] = {
+constexpr unsigned char
+isoansi_to_cecp037[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
  /* 1x */ "\x10\x11\x12\x13\x3C\x3D\x32\x26\x18\x19\x3F\x27\x1C\x1D\x1E\x1F"
@@ -185,8 +196,8 @@ ind_file_a_to_e[] = {
  /* Fx */ "\xDC\xDD\xDE\xDF\xEA\xEB\xEC\xED\xEE\xEF\xFA\xFB\xFC\xFD\xFE\xFF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
-ind_file_e_to_a[] = {
+constexpr unsigned char
+cecp037_to_isoansi[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
  /* 1x */ "\x10\x11\x12\x13\x9D\x85\x08\x87\x18\x19\x92\x8F\x1C\x1D\x1E\x1F"
@@ -209,7 +220,7 @@ ind_file_e_to_a[] = {
 /*--------------------------------------------------------------------------*/
 /* Default ascii to ebcdic */
 
-static unsigned char
+constexpr unsigned char
 ascii_to_ebcdic[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -230,7 +241,7 @@ ascii_to_ebcdic[] = {
  /* Fx */ "\x90\x9A\x9B\x9D\x9F\xA0\xAC\xAE\xAF\xFD\xFE\xFB\x3F\xEA\xFA\xFF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 ebcdic_to_ascii[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\xA6\x09\xA7\x7F\xA9\xB0\xB1\x0B\x0C\x0D\x0E\x0F"
@@ -253,7 +264,7 @@ ebcdic_to_ascii[] = {
 
 /*--------------------------------------------------------------------------*/
 
-static unsigned char
+constexpr unsigned char
 cp_437_to_037[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -274,7 +285,7 @@ cp_437_to_037[] = {
  /* Fx */ "\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x90\x3F\x3F\x3F\x3F\xEA\x3F\xFF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_037_to_437[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x07\x07\x0B\x0C\x0D\x0E\x0F"
@@ -297,7 +308,7 @@ cp_037_to_437[] = {
 
 /*--------------------------------------------------------------------------*/
 
-static unsigned char
+constexpr unsigned char
 cp_437_to_500[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -318,7 +329,7 @@ cp_437_to_500[] = {
  /* Fx */ "\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x90\x3F\x3F\x3F\x3F\xEA\x3F\xFF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_500_to_437[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x07\x07\x0B\x0C\x0D\x0E\x0F"
@@ -341,7 +352,7 @@ cp_500_to_437[] = {
 
 /*--------------------------------------------------------------------------*/
 
-static unsigned char
+constexpr unsigned char
 cp_850_to_273[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -362,7 +373,7 @@ cp_850_to_273[] = {
  /* Fx */ "\xCA\x8F\x1B\xB9\xB6\x7C\xE1\x9D\x90\xBD\xB3\xDA\xFA\xEA\x3E\x41"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_273_to_850[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\xDC\x09\xC3\x7F\xCA\xB2\xD5\x0B\x0C\x0D\x0E\x0F"
@@ -386,7 +397,7 @@ cp_273_to_850[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 273 (EBCDIC CECP Germany) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_273[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -407,7 +418,7 @@ cp_819_to_273[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\x6A\xE1\x70\xDD\xDE\xDB\xD0\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_273_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -431,7 +442,7 @@ cp_273_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 277 (EBCDIC CECP Denmark, Norway) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_277[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -453,7 +464,7 @@ cp_819_to_277[] = {
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
 
-static unsigned char
+constexpr unsigned char
 cp_277_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -477,7 +488,7 @@ cp_277_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 278 (EBCDIC CECP Finland, Sweden) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_278[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -498,7 +509,7 @@ cp_819_to_278[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\x6A\xE1\x70\xDD\xDE\xDB\xA1\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_278_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -522,7 +533,7 @@ cp_278_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 280 (EBCDIC CECP Italy) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_280[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -543,7 +554,7 @@ cp_819_to_280[] = {
  /* Fx */ "\x8C\x49\x6A\xCE\xCB\xCF\xCC\xE1\x70\x79\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_280_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -567,7 +578,7 @@ cp_280_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 284 (EBCDIC CECP Spain) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_284[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -588,7 +599,7 @@ cp_819_to_284[] = {
  /* Fx */ "\x8C\x6A\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_284_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -612,7 +623,7 @@ cp_284_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 285 (EBCDIC CECP UK) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_285[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -633,7 +644,7 @@ cp_819_to_285[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_285_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -657,7 +668,7 @@ cp_285_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 297 (EBCDIC CECP France) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_297[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -678,7 +689,7 @@ cp_819_to_297[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\x6A\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_297_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -702,7 +713,7 @@ cp_297_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 500 (EBCDIC CECP International) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_500[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x15\x0B\x0C\x0D\x0E\x0F"
@@ -723,7 +734,7 @@ cp_819_to_500[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_500_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x80\x09\x81\x7F\x82\x83\x84\x0B\x0C\x0D\x0E\x0F"
@@ -747,7 +758,7 @@ cp_500_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 437 to 1047 */
 
-static unsigned char
+constexpr unsigned char
 cp_437_to_1047[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -768,7 +779,7 @@ cp_437_to_1047[] = {
  /* Fx */ "\x3F\x8F\x3F\x3F\x3F\x3F\xE1\x3F\x90\x3F\xB3\x3F\x3F\xEA\x3F\x41"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_1047_to_437[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x1C\x07\x07\x07\x0B\x0C\x0D\x0E\x0F"
@@ -792,7 +803,7 @@ cp_1047_to_437[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 to 1047 */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_1047[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -813,7 +824,7 @@ cp_819_to_1047[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_1047_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -837,7 +848,7 @@ cp_1047_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 1252 to 1047 */
 
-static unsigned char
+constexpr unsigned char
 cp_1252_to_1047[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -858,7 +869,7 @@ cp_1252_to_1047[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_1047_to_1252[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x07\x07\x0B\x0C\x0D\x0E\x0F"
@@ -882,7 +893,7 @@ cp_1047_to_1252[] = {
 /*--------------------------------------------------------------------------*/
 /* 850 to 1047 */
 
-static unsigned char
+constexpr unsigned char
 cp_850_to_1047[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -903,7 +914,7 @@ cp_850_to_1047[] = {
  /* Fx */ "\xCA\x8F\x3F\xB9\xB6\xB5\xE1\x9D\x90\xBB\xB3\xDA\xFA\xEA\x3F\x41"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_1047_to_850[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x07\x07\x0B\x0C\x0D\x0E\x0F"
@@ -927,7 +938,7 @@ cp_1047_to_850[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 037 (EBCDIC US/Canada) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_037[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -948,7 +959,7 @@ cp_819_to_037[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_037_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF*/
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -972,7 +983,7 @@ cp_037_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 1252 (MS Windows Latin-1) to 037 (EBCDIC US/Canada) */
 
-static unsigned char
+constexpr unsigned char
 cp_1252_to_037[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -993,7 +1004,7 @@ cp_1252_to_037[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_037_to_1252[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x8D\x07\x0B\x0C\x0D\x0E\x0F"
@@ -1017,7 +1028,7 @@ cp_037_to_1252[] = {
 /*--------------------------------------------------------------------------*/
 /* 819 (ISO-8859-1 Latin-1) to 037 Version 2 (EBCDIC US/Canada SHARE) */
 
-static unsigned char
+constexpr unsigned char
 cp_819_to_037v2[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -1038,7 +1049,7 @@ cp_819_to_037v2[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_037v2_to_819[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -1062,7 +1073,7 @@ cp_037v2_to_819[] = {
 /*--------------------------------------------------------------------------*/
 /* 1252 (MS Windows Latin-1) to 037 Version 2 (EBCDIC US/Canada SHARE) */
 
-static unsigned char
+constexpr unsigned char
 cp_1252_to_037v2[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -1083,7 +1094,7 @@ cp_1252_to_037v2[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_037v2_to_1252[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x07\x09\x07\x7F\x07\x8D\x07\x0B\x0C\x0D\x0E\x0F"
@@ -1108,7 +1119,7 @@ cp_037v2_to_1252[] = {
 /* 1252 (MS Windows Latin-1) to 1140 (EBCDIC US/Canada + Euro) */
 /* table is lossless binary end-to-end translation in both directions */
 
-static unsigned char
+constexpr unsigned char
 cp_1252_to_1140[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x37\x2D\x2E\x2F\x16\x05\x25\x0B\x0C\x0D\x0E\x0F"
@@ -1129,7 +1140,7 @@ cp_1252_to_1140[] = {
  /* Fx */ "\x8C\x49\xCD\xCE\xCB\xCF\xCC\xE1\x70\xDD\xDE\xDB\xDC\x8D\x8E\xDF"
  };       /* x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
 
-static unsigned char
+constexpr unsigned char
 cp_1140_to_1252[] = {
  /*          x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xA  xB  xC  xD  xE  xF */
  /* 0x */ "\x00\x01\x02\x03\x9C\x09\x86\x7F\x97\x8D\x8E\x0B\x0C\x0D\x0E\x0F"
@@ -1154,7 +1165,7 @@ cp_1140_to_1252[] = {
 
 void translate(char* string, unsigned char* codepage){
     int len = strlen(string);
-    for (int i = 0;i < len;i++){
+    for (int i = 0; i < len; i++){
         string[i] = *(codepage + (unsigned char)string[i]);
     }
 }

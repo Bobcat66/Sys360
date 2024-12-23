@@ -1,10 +1,17 @@
 #ifndef CODEPAGE_H
 #define CODEPAGE_H
 
-/*Translates an ascii-coded string to an ebcdic-coded string*/
-void atoe(char* str);
+#include <unordered_map>
+#include <string>
+class encode {
+    public:
+    encode(unsigned char* codepage);
+    void operator()(char* string);
+    private:
+    unsigned char* codepage;
+};
 
-/*Translates an ebcdic-coded string to an ascii-coded string*/
-void etoa(char* str);
+//Because this is a map of FUNCTOR POINTERS, not functions, the functors need to be explicitly dereferenced in order to call them
+extern std::unordered_map<std::string,encode> codepages;
 
 #endif
