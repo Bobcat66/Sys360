@@ -29,6 +29,7 @@ class ckddasd : public iodevice {
     public:
     ckddasd(std::string dataName);
     ~ckddasd();
+    void acceptCommand(byte opcode, char* buffer, int count) override;
     void read(char* buffer, byte opcode) override;
     void write(char* buffer, byte opcode) override;
     void sense(char* buffer, byte opcode) override;

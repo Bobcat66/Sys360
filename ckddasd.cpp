@@ -38,6 +38,10 @@ ckddasd::~ckddasd(){
     clearTrackRecords();
 }
 
+void ckddasd::acceptCommand(byte opcode, char* buffer, int count){
+    
+}
+
 void ckddasd::read(char* buffer, byte opcode){
     switch (opcode) {
         case 0x1A:

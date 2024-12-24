@@ -1,8 +1,7 @@
 #ifndef CODEPAGESUTF8_H
 #define CODEPAGESUTF8_H
 
-#include <string>
-
+#include <unordered_map>
 //Codepages for a system with native UTF-8 encoding
 constexpr wchar_t
 cp_037[] = {
@@ -213,13 +212,5 @@ cp_278[] = {
  /* Ex */ L"\u00C9\u00F7\u0053\u0054\u0055\u0056\u0057\u0058\u0059\u005A\u00B2\u00D4\u0040\u00D2\u00D3\u00D5"
  /* Fx */ L"\u0030\u0031\u0032\u0033\u0034\u0035\u0036\u0037\u0038\u0039\u00B3\u00DB\u00DC\u00D9\u00DA\u009F"
  };       /*    x0    x1    x2    x3    x4    x5    x6    x7    x8    x9    xA    xB    xC    xD    xE    xF */
-
-class encodingNativeUTF8 {
-    public:
-    encodingNativeUTF8(const wchar_t* codepage);
-    std::wstring operator()(char* source);
-    private:
-    const wchar_t* codepage;
-};
 
 #endif

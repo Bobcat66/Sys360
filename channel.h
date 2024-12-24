@@ -29,11 +29,7 @@ class channel {
     channelstatus csw;
     std::shared_ptr<memory> coreptr;
     std::unordered_map<int,iodevice*> devices;
-    char buffer[256];
-    void readDevToBuf(int devaddr,int numchars);
-    void writeBufToDev(int devaddr,int numchars);
-    void writeBufToCore(word memaddr,int numbytes);
-    void readCoreToBuf(word memaddr,int numbytes);
+    std::vector<char> buffer;
     void fetchCAW();
     doubleword fetchCCW(); //Fetches channel command word
     void run(); //Function that runs a channel program in a separate thread
