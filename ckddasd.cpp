@@ -11,6 +11,7 @@ inline byte getRecordNum(doubleword count){return (count % (1 << 24)) / (1 << 16
 inline byte getKeyLen(doubleword count){return (count % (1 << 16))/(1 << 8);}
 inline byte getRecordLen(doubleword count){return (count % (1 << 8));}
 
+//TODO: MEMORY SAFETY
 struct record {
     byte flag;
     halfword cylinder;
@@ -19,7 +20,7 @@ struct record {
     byte keyLen;
     halfword dataLen;
     halfword check;
-    char* key;
+    std::string key;
     doubleword dataPtr; //Pointer to the beginning of the record's data within the fstream
     doubleword initPtr; //Pointer to the beginning of the record within the fstream
 };
@@ -39,7 +40,31 @@ ckddasd::~ckddasd(){
 }
 
 void ckddasd::acceptCommand(byte opcode, char* buffer, int count){
-    
+    switch (opcode) {
+        case 0x1A:
+            //Read Home address of current track
+            seekTrackIndex();
+            datastream.read(buffer,5);
+            break;
+        case 0x12:
+            //Read count of next record encountered (flag and check are omitted)
+            seekNextRecord();
+            pointer += 1;
+            syncStreamPtrs();
+            datastream.read(buffer,8);
+            break;
+        case 0x16:
+        case 0x06:
+        case 0x0E:
+        case 0x1E:
+        case 0x19:
+        case 0x05:
+        case 0x0D:
+        case 0x1D:
+        case 0x07:
+        case 0x1B:
+        case 0x0B:
+    }
 }
 
 void ckddasd::read(char* buffer, byte opcode){
@@ -222,7 +247,7 @@ void ckddasd::loadTrack(){
         datastream.read(reinterpret_cast<char*>(&(recPtr->keyLen)),1);
         datastream.read(reinterpret_cast<char*>(&(recPtr->dataLen)),2);
         datastream.read(reinterpret_cast<char*>(&(recPtr->check)),2);
-        datastream.read(recPtr->key,recPtr->keyLen);
+        datastream.read(recPtr->key.data(),recPtr->keyLen);
         recPtr->dataPtr = datastream.tellg();
         trackInfo.records.push_back(recPtr);
         datastream.seekg(recPtr->dataLen,std::fstream::cur);
@@ -252,9 +277,9 @@ void ckddasd::seekRecordKey(){
     syncStreamPtrs();
 }
 
-void ckddasd::seekKey(const char* seekkey){
+void ckddasd::seekKey(std::string seekkey){
     for (record* rec : trackInfo.records){
-        if (std::strcmp(rec->key,seekkey) == 0){
+        if (rec->key.data() == seekkey){
             ptrInfo.record = rec->recordNum;
             pointer = rec->initPtr;
             syncStreamPtrs();

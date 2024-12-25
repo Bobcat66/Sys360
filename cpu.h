@@ -3,8 +3,10 @@
 
 #include <memory>
 #include <unordered_map>
-#include "helpers.h"
+#include "cpuhelpers.h"
 #include "memory.h"
+#include "channel.h"
+#include <ostream>
 
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
@@ -16,7 +18,7 @@
 #define OTHERCHN 0b00000010
 #define EXTRNCHN 0b00000001
 //Progmask channel bitmasks
-#define FP_OVERFLOW 0b1000 //Fixed-point overflow
+#define FIP_OVERFLOW 0b1000 //Fixed-point overflow
 #define DEC_OVERFLOW 0b0100 //Decimal overflow
 #define EXP_UNDRFLOW 0b0010 //Exponent underflow
 #define SIGNIFICANCE 0b0001 //Significance
@@ -42,20 +44,19 @@ struct Registers {
 
 class cpu;
 
-typedef void (*instruction)(cpu &cpuref,byte,halfword,halfword);
-
-class cpu{
+class cpu {
     public:
-    cpu(int memblocks,std::unordered_map<byte,instruction> *ISAPtr);
+    cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA);
     ~cpu();
-    std::shared_ptr<memory> core;
     Registers rgstrs;
-    ProgramStatusWord psw;
-    /*Returns the halfword stored at the address. WARNING: possibly memory-unsafe*/
+    std::shared_ptr<memory> core;
+    /*Returns the byte stored at the address*/
+    byte getByte(word address);
+    /*Returns the halfword stored at the address.*/
     halfword getHalfword(word address);
-    /*Returns the word stored at the address. WARNING: possibly memory-unsafe*/
+    /*Returns the word stored at the address.*/
     word getWord(word address);
-    /*Returns the doubleword stored at the address. WARNING: possibly memory-unsafe*/
+    /*Returns the doubleword stored at the address.*/
     doubleword getDoubleword(word address);
     /*Returns an address generated from X, B, and D*/
     word getAddr(uint8_t X, uint8_t B, uint16_t D);
@@ -67,12 +68,37 @@ class cpu{
     void writeWord(word data, word address);
     /*Writes doubleword to memory*/
     void writeDoubleword(doubleword data, word address);
+
+    void registerChannel(byte address, channel &newchannel);
+
     int64_t dec64ToInt(uint64_t dec);
     doubleword bin32toDec(word num);
-    void cycle(word instructionAddress);
+
     private:
-    std::unique_ptr<std::unordered_map<byte,instruction>> ISA;
-    
+    std::unordered_map<byte,instruction> ISA;
+    std::unordered_map<byte,std::unique_ptr<channel>> channels;
+    ProgramStatusWord psw;
+    std::ostream cpulog;
+    uint64_t absoluteCounter;
+    bool verbose;
+    void cycle();
+    /*Reads byte from memory NO THREADLOCK*/
+    byte getByteNoLock(word address);
+    /*Reads halfword from memory NO THREADLOCK*/
+    halfword getHalfwordNoLock(word address);
+    /*Reads word from memory NO THREADLOCK*/
+    word getWordNoLock(word address);
+    /*Reads doubleword from memory NO THREADLOCK*/
+    doubleword getDoublewordNoLock(word address);
+    /*Writes byte to memory NO THREADLOCK*/
+    void writeByteNoLock(byte data, word address);
+    /*Writes halfword to memory NO THREADLOCK*/
+    void writeHalfwordNoLock(halfword data, word address);
+    /*Writes fullword to memory NO THREADLOCK*/
+    void writeWordNoLock(word data, word address);
+    /*Writes doubleword to memory NO THREADLOCK*/
+    void writeDoublewordNoLock(doubleword data, word address);
+    doubleword packPSW()
 
 };
 

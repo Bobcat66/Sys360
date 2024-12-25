@@ -56,7 +56,7 @@ class ckddasd : public iodevice {
     void syncStreamPtrs(); //Synchronizes stream pointers to the ckddasd pointers
     void clearTrackRecords(); //Safely disposes of track record metadata (Improper disposal of track records may cause a memory leak)
     void loadTrack(); //Loads track metadata for simpler seek operations
-    void seekKey(const char* seekkey); //Seeks record by its key, sets pointer to the beginning of the record
+    void seekKey(std::string seekkey); //Seeks record by its key, sets pointer to the beginning of the record
     void seekRecordKey(); //Seeks the beginning of the key area of the current record;
     void seekNextRecord(); //Seeks next record on the track. NOTE: This function loops back to the beginning of the track if no record is found
 };
