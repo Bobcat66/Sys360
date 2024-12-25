@@ -14,7 +14,7 @@ class stdiottyUTF8 : public iodevice {
     void open() override;
     void close() override;
     private:
-    encodingUTF8* encodingPtr;
+    encodingUTF8 encoding;
 };
 
 #endif

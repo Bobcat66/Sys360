@@ -6,6 +6,7 @@
 #include "cpuhelpers.h"
 #include "memory.h"
 #include "channel.h"
+#include "cpuclock.h"
 #include <ostream>
 
 //Sysmask channel bitmasks
@@ -37,6 +38,13 @@ struct ProgramStatusWord {
     unsigned int nxia : 24; //Next instruction address
 };
 
+enum CPUMode {
+    CONTROL,
+    EXECUTION,
+    MEMORY,
+    INTERRUPT
+};
+
 struct Registers {
     word gen[16]; //General registers
     doubleword fp[4]; //Floating-point registers
@@ -46,10 +54,11 @@ class cpu;
 
 class cpu {
     public:
-    cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA);
+    cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA, std::ostream &outputLog);
     ~cpu();
     Registers rgstrs;
     std::shared_ptr<memory> core;
+    void IPL(halfword cuu); 
     /*Returns the byte stored at the address*/
     byte getByte(word address);
     /*Returns the halfword stored at the address.*/
@@ -75,10 +84,12 @@ class cpu {
     doubleword bin32toDec(word num);
 
     private:
-    std::unordered_map<byte,instruction> ISA;
+    enum CPUMode mode;
+    std::unordered_map<byte,instruction> &ISA;
     std::unordered_map<byte,std::unique_ptr<channel>> channels;
     ProgramStatusWord psw;
-    std::ostream cpulog;
+    std::ostream &outputLog;
+    cpu_clock clockUnit;
     uint64_t absoluteCounter;
     bool verbose;
     void cycle();
@@ -98,8 +109,8 @@ class cpu {
     void writeWordNoLock(word data, word address);
     /*Writes doubleword to memory NO THREADLOCK*/
     void writeDoublewordNoLock(doubleword data, word address);
-    doubleword packPSW()
-
+    doubleword packPSW();
+    void setMode(enum CPUMode newMode);
 };
 
 

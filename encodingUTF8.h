@@ -5,7 +5,9 @@
 
 class encodingUTF8 {
     public:
+    encodingUTF8();
     encodingUTF8(const wchar_t* codepage);
+    void setCodepage(const wchar_t* codepage);
     void toUTF8(char* source, wchar_t* dest, int count); //Translates from encoding to UTF-8
     void toCodepage(wchar_t* source, char* dest, int count); //Translates from UTF-8 to encoding
     private:
