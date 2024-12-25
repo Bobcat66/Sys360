@@ -12,7 +12,7 @@ class encodingUTF8 {
     void toCodepage(wchar_t* source, char* dest, int count); //Translates from UTF-8 to encoding
     private:
     const wchar_t* codepage;
-    std::unordered_map<wchar_t,unsigned char> reverseCodepage; //Reverse codepage for translating from UTF to encoding
+    std::unordered_map<wchar_t,char> reverseCodepage; //Reverse codepage for translating from UTF to encoding
 };
 
 #endif

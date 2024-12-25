@@ -2,6 +2,7 @@
 #include "codepagesutf8.h"
 #include <cstring>
 #include <cwchar>
+#include <iostream>
 
 encodingUTF8::encodingUTF8(const wchar_t* codepage){
     setCodepage(codepage);
@@ -11,8 +12,8 @@ encodingUTF8::encodingUTF8(){}
 
 void encodingUTF8::setCodepage(const wchar_t* codepage){
     this->codepage = codepage;
-    for (int i = 0; i < wcslen(codepage); i++){
-        reverseCodepage[codepage[i]] = i;
+    for (int i = 0; i < 257; i++){
+        reverseCodepage[codepage[i]] = (char)i;
     }
 }
 

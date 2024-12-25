@@ -15,6 +15,7 @@ class stdiottyUTF8 : public iodevice {
     void close() override;
     private:
     encodingUTF8 encoding;
+    std::vector<wchar_t> inbuffer;
 };
 
 #endif
