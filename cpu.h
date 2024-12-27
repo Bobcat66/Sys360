@@ -8,6 +8,7 @@
 #include "channel.h"
 #include "cpuclock.h"
 #include <ostream>
+#include <future>
 
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
@@ -54,6 +55,7 @@ class cpu;
 
 class cpu {
     public:
+    friend class channel;
     cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA, std::ostream &outputLog);
     ~cpu();
     Registers rgstrs;
@@ -83,12 +85,15 @@ class cpu {
     int64_t dec64ToInt(uint64_t dec);
     doubleword bin32toDec(word num);
 
+    word getPSW();
+
     private:
     enum CPUMode mode;
     std::unordered_map<byte,instruction> &ISA;
     std::unordered_map<byte,std::unique_ptr<channel>> channels;
     ProgramStatusWord psw;
     std::ostream &outputLog;
+    std::vector<std::future<byte>> IO_ops;
     cpu_clock clockUnit;
     uint64_t absoluteCounter;
     bool verbose;
@@ -112,7 +117,5 @@ class cpu {
     doubleword packPSW();
     void setMode(enum CPUMode newMode);
 };
-
-
 
 #endif

@@ -12,7 +12,14 @@ cpu::cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &IS
 }
 
 byte cpu::getByte(word address){
+    setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Reading byte from " << std::hex << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime();
+    }
     return getByteNoLock(address);
 }
 
@@ -29,50 +36,121 @@ void cpu::setMode(enum CPUMode newMode){
             case INTERRUPT:
                 outputLog << "------------INTERRUPTION------------" << std::endl;
         }
-        outputLog << clockUnit.gettime() << " MICROSECONDS" << std::endl;
+        outputLog << std::dec << clockUnit.gettime() << " MICROSECONDS" << std::endl;
     }
 }
 
 halfword cpu::getHalfword(word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Reading halfword from " << std::hex << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     return getHalfwordNoLock(address);
 }
 
 word cpu::getWord(word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Reading fullword from " << std::hex << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     return getWordNoLock(address);
 }
 
 doubleword cpu::getDoubleword(word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Reading doubleword from " << std::hex << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     return getDoublewordNoLock(address);
 }
 
 void cpu::writeByte(byte data, word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Writing byte " << std::hex << data << " to " << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     writeByteNoLock(data,address);
 }
 
 void cpu::writeHalfword(halfword data, word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Writing halfword " << std::hex << data << " to " << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     writeHalfwordNoLock(data,address);
 }
 
 void cpu::writeWord(word data, word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Writing fullword " << std::hex << data << " to " << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     writeWordNoLock(data,address);
 }
 
 void cpu::writeDoubleword(doubleword data, word address){
     setMode(MEMORY);
+    if (verbose) {
+        outputLog << "Writing doubleword " << std::hex << data << " to " << address << std::endl;
+    }
     std::lock_guard<std::mutex> memlock(core->mtx);
+    if (verbose) {
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
+    }
     writeDoublewordNoLock(data,address);
+}
+
+void cpu::registerChannel(byte address, channel &newChannel){
+    channels[address] = std::make_unique<channel>(newChannel);
+}
+
+doubleword cpu::packPSW(){
+    word packpsw = (word) psw.smsk;
+    packpsw <<= 4;
+    packpsw += psw.key;
+    packpsw <<= 1;
+    packpsw += psw.ascii;
+    packpsw <<= 1;
+    packpsw += psw.mchk;
+    packpsw <<= 1;
+    packpsw += psw.wait;
+    packpsw <<= 1;
+    packpsw += psw.pst;
+    packpsw <<= 16;
+    packpsw += psw.ic;
+    packpsw <<= 2;
+    packpsw += psw.ilc;
+    packpsw <<= 2;
+    packpsw += psw.cond;
+    packpsw <<= 4;
+    packpsw += psw.pmsk;
+    packpsw <<= 24;
+    packpsw += psw.nxia;
+    return packpsw;
 }
 
 /* PRIVATE */
