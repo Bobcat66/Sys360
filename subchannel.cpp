@@ -1,4 +1,5 @@
 #include "subchannel.h"
+#include <iostream>
 
 /*-----------------------------------------------------------------*/
 /* GLOBAL VARS                                                     */
@@ -15,6 +16,7 @@ subchannel::subchannel(const byte ID,std::shared_ptr<memory> coreptr)
 ,workerThread{}{
     core = coreptr;
     threadActive = true;
+    subchannel_busy = false;
     workerThread = std::thread{&subchannel::runThread,this};
 }
 
@@ -29,10 +31,14 @@ void subchannel::addDevice(byte devAddr,iodevice* devptr){
 }
 
 int subchannel::startChannelProgram(byte devAddr, word memaddress, byte key){
-    std::unique_lock<std::mutex> comLock(commandAccept_mtx);
+    std::unique_lock<std::mutex> comLock(commandAccept_mtx,std::defer_lock);
+    std::cout << "COMLOCK\n";
     task = std::bind(&subchannel::runChannelProgram,this,devAddr,memaddress,key);
-    acceptedCommand.wait(comLock);
-    return commandAcceptCode.load();
+    std::cout << "TASK ASSIGNED\n";
+    while (!commandAcceptCode){
+        acceptedCommand.wait(comLock);
+    }
+    return commandAcceptCode.value();
 }
 
 int subchannel::haltChannelProgram(){
@@ -71,19 +77,17 @@ void subchannel::runThread() {
 }
 
 void subchannel::runChannelProgram(byte devaddr,word address,byte key){
-    std::unique_lock<std::mutex> subchannelLock(subchannel_mtx);
-
+    std::unique_lock<std::mutex> subchannelLock(subchannel_mtx,std::defer_lock);
+    std::lock_guard<std::mutex> commandAcceptLock(commandAccept_mtx);
     subchannelLock.lock();
     this->deviceID = devaddr;
-    std::unique_lock<std::mutex> devLock(devices[deviceID]->mtx);
+    std::unique_lock<std::mutex> devLock(devices[deviceID]->mtx,std::defer_lock);
     csw = {0,0,0,0,0};
     subchannelLock.unlock();
+    std::cout << "SUBCHANNEL UNLOCKED\n";
 
     if (subchannel_busy){
-        {   
-            std::lock_guard<std::mutex> acceptGuard(commandAccept_mtx);
-            commandAcceptCode.store(2);
-        }
+        commandAcceptCode = 2;
         acceptedCommand.notify_all();
         return;
     }
@@ -93,10 +97,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
         csw.key = key;
         csw.pc = address;
         subchannel_busy = true;
-        {   
-            std::lock_guard<std::mutex> acceptGuard(commandAccept_mtx);
-            commandAcceptCode.store(0);
-        }
+        commandAcceptCode = 0;
         acceptedCommand.notify_all();
         subchannelLock.unlock();
         while (subchannel_busy) {
@@ -105,7 +106,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
         devLock.unlock();
     } else {
         csw.usc |= CTRBSY;
-        commandAcceptCode.store(2);
+        commandAcceptCode = 2;
         acceptedCommand.notify_all();
         return;
     }
@@ -117,6 +118,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
 }
 
 void subchannel::cycle() {
+    std::cout << "cycle";
     std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
     doubleword ccw;
     byte opcode;

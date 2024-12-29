@@ -4,7 +4,7 @@
 #include "helpers.h"
 #include <atomic>
 #include <mutex>
-#include <iodevice.h>
+#include "iodevice.h"
 #include <unordered_map>
 #include <functional>
 #include <optional>
@@ -20,6 +20,7 @@
 class subchannel {
     public:
     subchannel(const byte ID,std::shared_ptr<memory> coreptr);
+    subchannel(subchannel&& other);
     ~subchannel();
     void addDevice(byte devAddr,iodevice* devptr);
     int startChannelProgram(byte devAddr,word address,byte key);
@@ -30,7 +31,7 @@ class subchannel {
     std::atomic_bool threadActive;
     private:
     std::condition_variable acceptedCommand;
-    std::atomic_int commandAcceptCode{0};
+    std::optional<int> commandAcceptCode;
     std::thread workerThread;
     channelstatus csw;
     std::deque<char> buffer;

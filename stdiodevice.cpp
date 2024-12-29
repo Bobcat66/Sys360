@@ -21,6 +21,7 @@ byte stdioDevice::getByte() {
     return (byte) c;
 }
 
+void stdioDevice::halt(){}
 void stdioDevice::open(){}
 void stdioDevice::close(){}
 

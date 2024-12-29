@@ -1,6 +1,7 @@
 #ifndef IOHELPERS_H
 #define IOHELPERS_H
 
+#include "helpers.h"
 /*-----------------------------------------------------------------*/
 /* DEVICE STATUS BITMASKS                                          */
 /*-----------------------------------------------------------------*/
@@ -63,8 +64,8 @@ struct channelstatus {
 /*-----------------------------------------------------------------*/
 
 struct deviceAddress {
-    unsigned int subchannel : 4;
-    unsigned int device : 4;
+    unsigned int subchannelID : 4;
+    unsigned int deviceID : 4;
 };
 
 #endif
