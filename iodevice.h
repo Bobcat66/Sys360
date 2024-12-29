@@ -13,7 +13,6 @@ class iodevice {
     virtual byte getByte(); //Retrieves one byte of data during a Read/Sense Operation
     virtual void open() = 0; //Opens device for IO
     virtual void close() = 0; //Closes device
-    virtual byte generateSenseByte() = 0;
     virtual bool service_in(); //Returns whether or not the device is ready to either accept data from the channel or transmit data to the channel
     std::mutex mtx;
 };
