@@ -1,55 +1,31 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
+#include "iohelpers.h"
 #include "helpers.h"
 #include "memory.h"
-#include "iodevice.h"
-#include <vector>
-#include <iostream>
-#include <unordered_map>
 #include <memory>
-#include <sstream>
-#include <atomic>
+#include <unordered_map>
+#include "subchannel.h"
 #include <optional>
-#include <thread>
-#include <deque>
-#include <iohelpers.h>
-#include <future>
-
-//NOTE: The 4 high-order bits of devaddr specifies the subchannel, while the 4 low-order bits specify the device
-
-enum cmode {
-    SELECTOR, // Only permits one channel program to run at a time
-    MULTIPLEXER // Allows for multiple channel programs to run concurrently
-};
+#include "iodevice.h"
 
 class channel {
     public:
-    
-    channel(std::shared_ptr<memory> coreptr,const enum cmode cMode,const byte channelAddress);
-    ~channel();
-    void addDevice(int addr, iodevice* devptr);
-    void startIO(byte devaddr);
-    doubleword packCSW();
-    std::optional<halfword> pendingInterrupts(); //Returns pending interruption code from a completed IO process, if one is available
-    std::atomic_bool activeIO;
+    channel(std::shared_ptr<memory> memPtr,const byte channelAddress);
+    //~channel();
+    void addSubchannel(byte subchannelID);
+    void addDevice(deviceAddress devaddr,iodevice* devptr); //4 high order bits designate the subchannel, 4 low order bits designate the device ID
+    int startIO(deviceAddress devaddr); //Starts the given subchannel, returns a condition code to be stored in the psw
+    int haltIO(deviceAddress devaddr); //Immediately halts the given subchannel
+    std::optional<halfword> getPendingInterrupts(); //Returns interruption codes if there are any pending interrupts
+    const byte channelID;
     private:
-    void storeCSW(); //Stores the CSW at address 64 of main memory
-    const byte channelAddress;
-    const enum cmode channelMode;
-    std::atomic<channelstatus> csw;
-    std::atomic_int activeProcessCount = 0;
-    std::shared_ptr<memory> coreptr;
-    std::unordered_map<int,iodevice*> devices;
-    halfword activeSubchannels; // A status byte indicating active subchannels
-    std::vector<std::optional<IOInterrupt>> activeProcessQueue;
-    //std::unordered_map<int,std::thread> deviceThreads;
-    void fetchCAW();
-    doubleword fetchCCW(); //Fetches channel command word
-    void run(int devaddr,std::vector<std::optional<IOInterrupt>>::iterator interruptPtr); //Function that runs a channel program in a separate thread
-    void cycle();
-    std::mutex channel_mtx; //For protecting access to shared resources
-    
+    channelstatus csw;
+    void storeCSW(); //Stores CSW at address 64 in memory
+    word fetchCAW(); //Retrieves CAW from address 72 in memory
+    std::shared_ptr<memory> core;
+    std::unordered_map<byte,subchannel> subchannels;
 };
 
 #endif

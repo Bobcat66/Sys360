@@ -13,6 +13,8 @@
 #include <memory>
 #include "memory.h"
 #include <thread>
+#include <unordered_set>
+#include <condition_variable>
 
 //TODO: Implement custom thread pool
 class subchannel {
@@ -27,6 +29,8 @@ class subchannel {
     std::atomic_bool pendingInterrupt;
     std::atomic_bool threadActive;
     private:
+    std::condition_variable acceptedCommand;
+    std::atomic_int commandAcceptCode{0};
     std::thread workerThread;
     channelstatus csw;
     std::deque<char> buffer;
@@ -36,6 +40,7 @@ class subchannel {
     std::optional<std::function<void()>> task;
     std::atomic_bool subchannel_busy;
     std::mutex subchannel_mtx;
+    std::mutex commandAccept_mtx;
     void runThread();
     void runChannelProgram(byte devaddr,word address,byte key);
     void cycle();

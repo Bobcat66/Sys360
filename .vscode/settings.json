@@ -60,6 +60,7 @@
         "thread": "cpp",
         "cstring": "cpp",
         "future": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "unordered_set": "cpp"
     }
 }

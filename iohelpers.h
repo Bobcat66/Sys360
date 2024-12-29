@@ -58,4 +58,13 @@ struct channelstatus {
     unsigned int count : 16; //Residual count of last CCW used
 };
 
+/*-----------------------------------------------------------------*/
+/* DEVICE ADDRESS                                                  */
+/*-----------------------------------------------------------------*/
+
+struct deviceAddress {
+    unsigned int subchannel : 4;
+    unsigned int device : 4;
+};
+
 #endif
