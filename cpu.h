@@ -10,6 +10,8 @@
 #include <ostream>
 #include <future>
 
+//TODO: Redo memory with new synchronized memory functions
+
 //Sysmask channel bitmasks
 #define CHANNEL0 0b10000000
 #define CHANNEL1 0b01000000
@@ -19,6 +21,7 @@
 #define CHANNEL5 0b00000100
 #define OTHERCHN 0b00000010
 #define EXTRNCHN 0b00000001
+
 //Progmask channel bitmasks
 #define FIP_OVERFLOW 0b1000 //Fixed-point overflow
 #define DEC_OVERFLOW 0b0100 //Decimal overflow

@@ -1,7 +1,10 @@
 #ifndef CODEPAGESUTF8_H
 #define CODEPAGESUTF8_H
 
-//Codepages for a system with native UTF-8 encoding
+/*-----------------------------------------------------------------*/
+/* UTF-8 CODEPAGES                                                 */
+/*-----------------------------------------------------------------*/
+
 constexpr wchar_t
 cp_037[] = {
  /*             x0    x1    x2    x3    x4    x5    x6    x7    x8    x9    xA    xB    xC    xD    xE    xF */
