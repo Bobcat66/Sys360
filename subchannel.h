@@ -17,12 +17,12 @@
 //TODO: Implement custom thread pool
 class subchannel {
     public:
-    friend class channel;
-    subchannel(const byte ID);
+    subchannel(const byte ID,std::shared_ptr<memory> coreptr);
     ~subchannel();
-    int addDevice(byte devAddr,iodevice* devptr);
-    int startChannelProgram(byte devAddr,word memAddress);
+    void addDevice(byte devAddr,iodevice* devptr);
+    int startChannelProgram(byte devAddr,word address,byte key);
     int haltChannelProgram();
+    doubleword getCSW();
     const byte subchannelID;
     std::atomic_bool pendingInterrupt;
     std::atomic_bool threadActive;

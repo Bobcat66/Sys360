@@ -1,5 +1,58 @@
 #include "subchannel.h"
 
+/*-----------------------------------------------------------------*/
+/* PUBLIC                                                          */
+/*-----------------------------------------------------------------*/
+
+subchannel::subchannel(const byte ID,std::shared_ptr<memory> coreptr)
+:subchannelID(ID)
+,workerThread{}{
+    core = coreptr;
+    threadActive = true;
+    workerThread = std::thread{&subchannel::runThread,this};
+}
+
+subchannel::~subchannel() {
+    threadActive = false;
+    workerThread.join();
+}
+
+void subchannel::addDevice(byte devAddr,iodevice* devptr){
+    devices.insert(std::make_pair(devAddr,devptr));
+}
+
+int subchannel::startChannelProgram(byte devAddr, word memaddress, byte key){
+    if (subchannel_busy) {return 1;}
+    task = std::bind(&subchannel::runChannelProgram,this,devAddr,memaddress,key);
+    return 0;
+}
+
+int subchannel::haltChannelProgram(){
+    if (!subchannel_busy) {return 1;}
+    subchannel_busy = false;
+    return 0;
+}
+
+doubleword subchannel::getCSW(){
+    std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
+    doubleword packedCSW = csw.key%(1<<4);
+    packedCSW <<= 28;
+    packedCSW |= csw.pc;
+    packedCSW <<= 8;
+    packedCSW |= csw.csc;
+    packedCSW <<= 8;
+    packedCSW |= csw.usc;
+    packedCSW <<= 16;
+    packedCSW |= csw.count;
+    return packedCSW;
+}
+
+
+
+/*-----------------------------------------------------------------*/
+/* PRIVATE                                                         */
+/*-----------------------------------------------------------------*/
+
 void subchannel::runThread() {
     while (threadActive) {
         if (task) {
