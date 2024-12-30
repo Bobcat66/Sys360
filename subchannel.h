@@ -25,10 +25,12 @@ class subchannel {
     void addDevice(byte devAddr,iodevice* devptr);
     int startChannelProgram(byte devAddr,word address,byte key);
     int haltChannelProgram();
-    doubleword getCSW();
+    doubleword getCSW(); //Returns packed CSW. WARNING: NOT THREAD-SAFE, USE WITH CAUTION
+    byte getDevID();
     const byte subchannelID;
-    std::atomic_bool pendingInterrupt;
+    std::atomic_int pendingInterrupts{0};
     std::atomic_bool threadActive;
+    std::mutex subchannel_mtx;
     private:
     std::condition_variable acceptedCommand;
     std::optional<int> commandAcceptCode;
@@ -36,11 +38,10 @@ class subchannel {
     channelstatus csw;
     std::deque<char> buffer;
     std::shared_ptr<memory> core;
-    byte deviceID;
+    std::atomic_uchar deviceID;
     std::unordered_map<byte,iodevice*> devices;
     std::optional<std::function<void()>> task;
     std::atomic_bool subchannel_busy;
-    std::mutex subchannel_mtx;
     std::mutex commandAccept_mtx;
     void runThread();
     void runChannelProgram(byte devaddr,word address,byte key);

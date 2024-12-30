@@ -28,19 +28,29 @@ int channel::startIO(deviceAddress devaddr) {
 }
 
 int channel::haltIO(deviceAddress devaddr) {
-
+    return subchannels[devaddr.subchannelID]->haltChannelProgram();
 }
 
 std::optional<halfword> channel::getPendingInterrupts() {
-
+    std::optional<halfword> res;
+    for (auto& [key,value] : subchannels) {
+        std::lock_guard<std::mutex> subchannelLock(value->subchannel_mtx);
+        if (value->pendingInterrupts) {
+            res = ((halfword) key << 8) | value->getDevID();
+            value->pendingInterrupts--;
+            storeCSW(value->getCSW());
+            break;
+        }
+    }
+    return res;
 }
 
 /*-----------------------------------------------------------------*/
 /* PRIVATE                                                         */
 /*-----------------------------------------------------------------*/
 
-void channel::storeCSW() {
-
+void channel::storeCSW(doubleword csw) {
+    core->writeWord(64,csw,0);
 }
 
 word channel::fetchCAW() {

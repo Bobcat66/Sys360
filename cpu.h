@@ -101,22 +101,6 @@ class cpu {
     uint64_t absoluteCounter;
     bool verbose;
     void cycle();
-    /*Reads byte from memory NO THREADLOCK*/
-    byte getByteNoLock(word address);
-    /*Reads halfword from memory NO THREADLOCK*/
-    halfword getHalfwordNoLock(word address);
-    /*Reads word from memory NO THREADLOCK*/
-    word getWordNoLock(word address);
-    /*Reads doubleword from memory NO THREADLOCK*/
-    doubleword getDoublewordNoLock(word address);
-    /*Writes byte to memory NO THREADLOCK*/
-    void writeByteNoLock(byte data, word address);
-    /*Writes halfword to memory NO THREADLOCK*/
-    void writeHalfwordNoLock(halfword data, word address);
-    /*Writes fullword to memory NO THREADLOCK*/
-    void writeWordNoLock(word data, word address);
-    /*Writes doubleword to memory NO THREADLOCK*/
-    void writeDoublewordNoLock(doubleword data, word address);
     doubleword packPSW();
     void setMode(enum CPUMode newMode);
 };

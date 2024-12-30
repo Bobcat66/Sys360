@@ -30,6 +30,6 @@ int main(){
     channel testChannel(mem,0);
     testChannel.addSubchannel(0);
     testChannel.addDevice({0,0},&testDev);
-    std::cout << testChannel.startIO({0,0});
+    testChannel.startIO({0,0});
     //std::cout << "Hello World (ThreadTest)";
 }

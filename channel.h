@@ -22,7 +22,7 @@ class channel {
     const byte channelID;
     private:
     channelstatus csw;
-    void storeCSW(); //Stores CSW at address 64 in memory
+    void storeCSW(doubleword csw); //Stores CSW at address 64 in memory
     word fetchCAW(); //Retrieves CAW from address 72 in memory
     std::shared_ptr<memory> core;
     std::unordered_map<byte,subchannel*> subchannels;

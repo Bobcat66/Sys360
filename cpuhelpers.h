@@ -31,8 +31,28 @@
 
 #define FIP_OVERFLOW 0b1000 //Fixed-point overflow
 #define DEC_OVERFLOW 0b0100 //Decimal overflow
-#define EXP_UNDRFLOW 0b0010 //Exponent underflow
+#define EX_UNDERFLOW 0b0010 //Exponent underflow
 #define SIGNIFICANCE 0b0001 //Significance
+
+/*-----------------------------------------------------------------*/
+/* INTERRUPTION CODES                                              */
+/*-----------------------------------------------------------------*/
+
+#define OPRN_ITRP 0x0001    //OPERATION
+#define PROP_ITRP 0x0002    //PRIVILEGED OPERATION
+#define EXEC_ITRP 0x0003    //EXECUTE
+#define PRTC_ITRP 0x0004    //PROTECTION
+#define ADDR_ITRP 0x0005    //ADDRESSING
+#define SPEC_ITRP 0x0006    //SPECIFICATION
+#define DATA_ITRP 0x0007    //DATA    
+#define FIOF_ITRP 0x0008    //FIXED-POINT OVERFLOW
+#define FIDV_ITRP 0x0009    //FIXED-POINT DIVISION
+#define DCOF_ITRP 0x000A    //DECIMAL OVERFLOW
+#define DCDV_ITRP 0x000B    //DECIMAL DIVISION
+#define EXOF_ITRP 0x000C    //EXPONENT OVERFLOW
+#define EXUF_ITRP 0x000D    //EXPONENT UNDERFLOW
+#define SIGN_ITRP 0x000E    //SIGNIFICANCE
+#define FLDV_ITRP 0x000F    //FLOATING-POINT DIVISION
 
 /*-----------------------------------------------------------------*/
 /* ADDRESSING HELPERS                                              */
@@ -58,8 +78,9 @@ class cpu;
 
 struct instruction {
     const unsigned int pst : 1; //0 = privileged instruction, 1 = unprivileged instruction
+    const unsigned int ilc : 2;
     const std::string name;
-    void (*run)(cpu *cpuptr,byte b1,halfword word1,halfword word2);
+    std::optional<int> (*run)(cpu *cpuptr,byte b1,halfword word1,halfword word2);
 };
 
 

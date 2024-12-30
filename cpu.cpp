@@ -20,7 +20,7 @@ byte cpu::getByte(word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime();
     }
-    return getByteNoLock(address);
+    return core->getByteNoSync(address,psw.key);
 }
 
 void cpu::setMode(enum CPUMode newMode){
@@ -49,7 +49,7 @@ halfword cpu::getHalfword(word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    return getHalfwordNoLock(address);
+    return core->getHalfwordNoSync(address,psw.key);
 }
 
 word cpu::getWord(word address){
@@ -61,7 +61,7 @@ word cpu::getWord(word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    return getWordNoLock(address);
+    return core->getWordNoSync(address,psw.key);
 }
 
 doubleword cpu::getDoubleword(word address){
@@ -73,7 +73,7 @@ doubleword cpu::getDoubleword(word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    return getDoublewordNoLock(address);
+    return core->getDoublewordNoSync(address,psw.key);
 }
 
 void cpu::writeByte(byte data, word address){
@@ -85,7 +85,7 @@ void cpu::writeByte(byte data, word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    writeByteNoLock(data,address);
+    core->writeByteNoSync(data,address,psw.key);
 }
 
 void cpu::writeHalfword(halfword data, word address){
@@ -97,7 +97,7 @@ void cpu::writeHalfword(halfword data, word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    writeHalfwordNoLock(data,address);
+    core->writeHalfwordNoSync(data,address,psw.key);
 }
 
 void cpu::writeWord(word data, word address){
@@ -109,7 +109,7 @@ void cpu::writeWord(word data, word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    writeWordNoLock(data,address);
+    core->writeWordNoSync(data,address,psw.key);
 }
 
 void cpu::writeDoubleword(doubleword data, word address){
@@ -121,7 +121,7 @@ void cpu::writeDoubleword(doubleword data, word address){
     if (verbose) {
         outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
-    writeDoublewordNoLock(data,address);
+    core->writeDoublewordNoSync(data,address,psw.key);
 }
 
 void cpu::registerChannel(byte address, channel &newChannel){
@@ -171,17 +171,22 @@ void cpu::cycle(){
                 throw 0x02;
             }
             doubleword oldIA = psw.nxia;
+            psw.ilc = currentInstruction.ilc;
             psw.nxia += (2*psw.ilc); //Increases instruction counter, can be overridden by the actual operation
+            std::optional<int> retCode;
             switch (psw.ilc){
                 case 1:
-                    (currentInstruction.run)(this,getByte(oldIA + 1),0,0);
+                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),0,0);
                     break;
                 case 2:
-                    (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),0);
+                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),0);
                     break;
                 case 3:
-                    (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),getHalfword(oldIA+4));
+                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),getHalfword(oldIA+4));
                     break;
+            }
+            if (retCode.has_value()) {
+                psw.cond = retCode.value();
             }
         } catch (std::out_of_range) {
             throw 0x01;

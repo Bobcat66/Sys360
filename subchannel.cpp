@@ -40,7 +40,7 @@ int subchannel::haltChannelProgram(){
 }
 
 doubleword subchannel::getCSW(){
-    std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
+    //std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
     doubleword packedCSW = csw.key%(1<<4);
     packedCSW <<= 28;
     packedCSW |= csw.pc;
@@ -51,6 +51,10 @@ doubleword subchannel::getCSW(){
     packedCSW <<= 16;
     packedCSW |= csw.count;
     return packedCSW;
+}
+
+byte subchannel::getDevID() {
+    return deviceID.load();
 }
 
 
@@ -103,7 +107,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
     }
 
     subchannel_busy = false;
-    pendingInterrupt = true;
+    pendingInterrupts++;
     buffer.clear();
 }
 
@@ -270,7 +274,7 @@ void subchannel::cycle() {
             break;
     }
     if (flags & PGCI_FLAG) {
-        pendingInterrupt = true;
+        pendingInterrupts++;
     }
     exit_cycle:
     csw.pc += 8;
