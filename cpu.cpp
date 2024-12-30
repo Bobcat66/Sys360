@@ -129,7 +129,7 @@ void cpu::registerChannel(byte address, channel &newChannel){
 }
 
 doubleword cpu::packPSW(){
-    word packpsw = (word) psw.smsk;
+    doubleword packpsw = (doubleword) psw.smsk;
     packpsw <<= 4;
     packpsw += psw.key;
     packpsw <<= 1;

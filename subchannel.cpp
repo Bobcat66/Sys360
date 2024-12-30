@@ -2,12 +2,6 @@
 #include <iostream>
 
 /*-----------------------------------------------------------------*/
-/* GLOBAL VARS                                                     */
-/*-----------------------------------------------------------------*/
-
-std::mutex command_mtx;
-
-/*-----------------------------------------------------------------*/
 /* PUBLIC                                                          */
 /*-----------------------------------------------------------------*/
 
@@ -32,9 +26,7 @@ void subchannel::addDevice(byte devAddr,iodevice* devptr){
 
 int subchannel::startChannelProgram(byte devAddr, word memaddress, byte key){
     std::unique_lock<std::mutex> comLock(commandAccept_mtx,std::defer_lock);
-    std::cout << "COMLOCK\n";
     task = std::bind(&subchannel::runChannelProgram,this,devAddr,memaddress,key);
-    std::cout << "TASK ASSIGNED\n";
     while (!commandAcceptCode){
         acceptedCommand.wait(comLock);
     }
@@ -84,7 +76,6 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
     std::unique_lock<std::mutex> devLock(devices[deviceID]->mtx,std::defer_lock);
     csw = {0,0,0,0,0};
     subchannelLock.unlock();
-    std::cout << "SUBCHANNEL UNLOCKED\n";
 
     if (subchannel_busy){
         commandAcceptCode = 2;
@@ -92,7 +83,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
         return;
     }
 
-    if (devLock.try_lock() == 0){
+    if (devLock.try_lock()){
         subchannelLock.lock();
         csw.key = key;
         csw.pc = address;
@@ -111,14 +102,12 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
         return;
     }
 
-    this->deviceID = NULL;
     subchannel_busy = false;
     pendingInterrupt = true;
     buffer.clear();
 }
 
 void subchannel::cycle() {
-    std::cout << "cycle";
     std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
     doubleword ccw;
     byte opcode;
@@ -127,8 +116,7 @@ void subchannel::cycle() {
     halfword originalCount;
     bool noSuppressLen;
     iodevice *dev = devices[deviceID];
-    std::unique_lock<std::mutex> memlock(core->mtx);
-
+    std::unique_lock<std::mutex> memlock(core->mtx,std::defer_lock);
     //PROGRAM ERROR HANDLING
     try {
         ccw = core->getDoubleword(csw.pc,0);
@@ -138,10 +126,10 @@ void subchannel::cycle() {
         goto exit_cycle;
     }
 
-    opcode = ccw / (1 << 56);
-    address = (ccw % (1 << 56))/(1 << 32);
-    flags = (ccw % (1 << 32))/(1 << 27);
-    originalCount = ccw % (1 << 16);
+    opcode = ccw / ((doubleword)1 << 56);
+    address = (ccw % ((doubleword)1 << 56))/(doubleword)((doubleword)1 << 32);
+    flags = (ccw % ((doubleword)1 << 32))/((doubleword)1 << 27);
+    originalCount = ccw % ((doubleword)1 << 16);
     csw.count = originalCount;
     noSuppressLen = !((flags & SPLN_FLAG) && !(flags & CHDT_FLAG));
 
@@ -163,7 +151,7 @@ void subchannel::cycle() {
 
             dev->acceptCommand(opcode);
             while (dev->service_in()) {
-                buffer.push_back(dev->getByte());
+                buffer.push_back(dev->getChar());
                 if (csw.count) {
                     csw.count--;
                 } else {
@@ -223,7 +211,7 @@ void subchannel::cycle() {
 
             dev->acceptCommand(opcode);
             while (dev->service_in()){
-                dev->acceptByte(buffer.front());
+                dev->acceptChar(buffer.front());
                 buffer.pop_front();
                 if (csw.count) {
                     csw.count--;
@@ -244,7 +232,7 @@ void subchannel::cycle() {
 
             dev->acceptCommand(opcode);
             while (dev->service_in()) {
-                buffer.push_back(dev->getByte());
+                buffer.push_back(dev->getChar());
                 if (csw.count) {
                     csw.count--;
                 } else {
@@ -286,4 +274,7 @@ void subchannel::cycle() {
     }
     exit_cycle:
     csw.pc += 8;
+    if (!(flags & CHCM_FLAG)){
+        subchannel_busy = false;
+    }
 }

@@ -11,13 +11,15 @@ class stdioDevice : public iodevice {
     stdioDevice();
     void acceptCommand(byte opcode) override; 
     void halt() override;
-    void acceptByte(byte data) override;
-    byte getByte() override;
+    void acceptChar(char data) override;
+    char getChar() override;
     void open() override;
     void close() override;
     bool service_in() override;
 
     private:
+    bool _service_in;
+    int count;
     byte opcode;
 };
 

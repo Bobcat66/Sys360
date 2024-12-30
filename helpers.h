@@ -28,13 +28,13 @@ constexpr byte MAXNEG_8 =         0b10000000; //Most negative int8, expressed as
 inline uint8_t leftNibble(byte in){return in/16;}
 inline uint8_t rightNibble(byte in){return in%16;}
 
-inline byte leftByte(halfword in){return (byte)(in/(1 << 8));}
-inline byte rightByte(halfword in){return (byte)(in%(1 << 8));}
+inline byte leftByte(halfword in){return (in/((halfword)1 << 8));}
+inline byte rightByte(halfword in){return (in%((halfword)1 << 8));}
 
-inline halfword leftHalfword(word in){return (halfword)(in/(1 << 16));}
-inline halfword rightHalfword(word in){return (halfword)(in%(1 << 16));}
+inline halfword leftHalfword(word in){return (in/((word)1 << 16));}
+inline halfword rightHalfword(word in){return (in%((word)1 << 16));}
 
-inline word leftWord(doubleword in){return (word)(in/(doubleword)(1 << 32));}
-inline word rightWord(doubleword in){return (word)(in%(doubleword)(1 << 32));}
+inline word leftWord(doubleword in){return (word)(in/((doubleword)1 << 32));}
+inline word rightWord(doubleword in){return (word)(in%((doubleword)1 << 32));}
 
 #endif

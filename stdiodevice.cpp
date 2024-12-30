@@ -1,6 +1,6 @@
 #include "streamdevice.h"
 
-
+//todo: work on stream device
 /*-----------------------------------------------------------------*/
 /* PUBLIC                                                          */
 /*-----------------------------------------------------------------*/
@@ -9,16 +9,18 @@ stdioDevice::stdioDevice() {}
 
 void stdioDevice::acceptCommand(byte opcode) {
     this->opcode = opcode;
+    _service_in = true;
 }
 
-void stdioDevice::acceptByte(byte data) {
-    std::cout << (char) data;
+void stdioDevice::acceptChar(char data) {
+    if (data == '\0') {_service_in = false;}
+    std::cout << data;
 }
 
-byte stdioDevice::getByte() {
+char stdioDevice::getChar() {
     char c;
     std::cin >> c;
-    return (byte) c;
+    return c;
 }
 
 void stdioDevice::halt(){}
@@ -26,7 +28,7 @@ void stdioDevice::open(){}
 void stdioDevice::close(){}
 
 bool stdioDevice::service_in() {
-    return true;
+    return _service_in;
 }
 /*-----------------------------------------------------------------*/
 /* PRIVATE                                                         */

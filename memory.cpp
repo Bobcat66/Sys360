@@ -78,7 +78,6 @@ void memory::writeDoubleword(word memaddr, doubleword data, unsigned int key){
 byte memory::getByteNoSync(word memaddr,unsigned int key){
     block* blkptr = getBlkPtr(memaddr);
     int blkpos = getBlkPos(memaddr);
-    std::cout << memaddr << std::endl;
     if (key != blkptr->key && key != 0 && blkptr->readProtection){throw 0x04;}
     return blkptr->core[blkpos];
 }
