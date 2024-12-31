@@ -157,6 +157,14 @@ void cpu::setAddr(word address) {
     psw.nxia = address;
 }
 
+int cpu::startIO(byte channel, byte subchannel, byte device) {
+    return channels[channel]->startIO({subchannel,device});
+}
+
+int cpu::haltIO(byte channel, byte subchannel, byte device) {
+    return channels[channel]->haltIO({subchannel,device});
+}
+
 byte cpu::getPmsk() {
     return psw.pmsk;
 }

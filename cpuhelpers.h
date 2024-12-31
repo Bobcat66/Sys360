@@ -10,9 +10,10 @@
 /* INSTRUCTION FIELD MACROS                                        */
 /*-----------------------------------------------------------------*/
 
-#define LOAD_RR_FIELDS uint8_t R1 = leftNibble(b1); uint8_t R2 = rightNibble(b1);
+#define LOAD_RR_FIELDS byte R1 = leftNibble(b1); byte R2 = rightNibble(b1);
 #define LOAD_RX_FIELDS byte R1 = leftNibble(b1); byte X1 = rightNibble(b1); byte B2 = baseRegister(word1); byte D2 = displacement(word1);
 #define LOAD_RS_FIELDS byte R1 = leftNibble(b1); byte R3 = rightNibble(b1); byte B2 = baseRegister(word1); byte D2 = displacement(word1);
+#define LOAD_SI_FIELDS byte I2 = b1; byte B1 = baseRegister(word1); byte D1 = baseRegister(word1);
 
 /*-----------------------------------------------------------------*/
 /* SYSMASK BITMASKS                                                */

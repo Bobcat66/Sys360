@@ -538,11 +538,30 @@ std::optional<int> EXECUTE(cpu *cpu,byte b1,halfword word1, halfword word2) {
 /*#                                                               #*/
 /*#################################################################*/
 
-std::optional<int> SUPERVISOR_CALL(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> SET_PROGRAM_MASK(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> SET_STORAGE_KEY(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> SET_SYSTEM_MASK(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> DIAGNOSE(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
+std::optional<int> SUPERVISOR_CALL(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> SET_PROGRAM_MASK(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> SET_STORAGE_KEY(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> SET_SYSTEM_MASK(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> DIAGNOSE(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
 
 /*#################################################################*/
 /*#                                                               #*/
@@ -550,12 +569,37 @@ std::optional<int> DIAGNOSE(cpu *cpu,byte b1,halfword word1, halfword word2) {st
 /*#                                                               #*/
 /*#################################################################*/
 
-std::optional<int> HALT_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> START_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> TEST_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> TEST_CHANNEL(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> READ_DIRECT(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
-std::optional<int> WRITE_DIRECT(cpu *cpu,byte b1,halfword word1, halfword word2) {std::optional<int> ret; return ret;}
+std::optional<int> HALT_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> START_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret;
+    LOAD_SI_FIELDS
+     
+    return ret;
+}
+
+std::optional<int> TEST_IO(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> TEST_CHANNEL(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> READ_DIRECT(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
+
+std::optional<int> WRITE_DIRECT(cpu *cpu,byte b1,halfword word1, halfword word2) {
+    std::optional<int> ret; 
+    return ret;
+}
 
 /*#################################################################*/
 /*#                                                               #*/

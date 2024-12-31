@@ -8,7 +8,6 @@
 #include "channel.h"
 #include "cpuclock.h"
 #include <ostream>
-#include <future>
 
 //TODO: Redo memory with new synchronized memory functions
 
@@ -85,6 +84,9 @@ class cpu {
     void setAddr(word address); //Sets instruction counter
 
     void registerChannel(byte address, channel &newchannel);
+    int startIO(byte channel, byte subchannel, byte dev);
+    int haltIO(byte channel, byte subchannel, byte dev);
+
     byte getPmsk();
     byte getCond();
     int64_t dec64ToInt(uint64_t dec);
@@ -98,7 +100,6 @@ class cpu {
     std::unordered_map<byte,std::unique_ptr<channel>> channels;
     ProgramStatusWord psw;
     std::ostream &outputLog;
-    std::vector<std::future<byte>> IO_ops;
     cpu_clock clockUnit;
     uint64_t absoluteCounter;
     bool verbose;
