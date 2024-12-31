@@ -92,7 +92,7 @@ halfword memory::getHalfwordNoSync(word memaddr,unsigned int key){
     int blkpos = getBlkPos(memaddr);
     if (memaddr % 2 != 0){throw 0x06;} //Checks for integral boundary
     if (key != blkptr->key && key != 0 && blkptr->readProtection){throw 0x04;} //Storage protection
-    halfword out;
+    halfword out alignas(2);
     std::memcpy(reinterpret_cast<byte*>(&out),blkptr->core + blkpos,2);
     return out;
 }
@@ -107,7 +107,7 @@ word memory::getWordNoSync(word memaddr, unsigned int key){
     int blkpos = getBlkPos(memaddr);
     if (memaddr % 4 != 0){throw 0x06;} //Checks for integral boundary
     if (key != blkptr->key && key != 0 && blkptr->readProtection){throw 0x04;} //Storage protection
-    word out;
+    word out alignas(4);
     std::memcpy(reinterpret_cast<byte*>(&out),(blkptr->core + blkpos),4);
     return out;
 }
@@ -122,7 +122,7 @@ doubleword memory::getDoublewordNoSync(word memaddr, unsigned int key){
     int blkpos = getBlkPos(memaddr);
     if (memaddr % 8 != 0){throw 0x06;} //Checks for integral boundary
     if (key != blkptr->key && key != 0 && blkptr->readProtection){throw 0x04;} //Storage protection
-    doubleword out;
+    doubleword out alignas(8);
     std::memcpy(reinterpret_cast<byte*>(&out),(blkptr->core + blkpos),8);
     return out;
 }

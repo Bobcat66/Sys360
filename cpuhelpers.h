@@ -2,6 +2,8 @@
 #define CPUHELPERS_H
 
 #include "helpers.h"
+#include <bit>
+#include <optional>
 #include <string>
 
 /*-----------------------------------------------------------------*/
@@ -69,6 +71,10 @@ inline uint8_t baseRegister(halfword in){return in/(1<<12);}
 inline bool chkOverflow(word add1, word add2){return ((add1 & MAXNEG_32) != (add2 & MAXNEG_32)) && (((add1 + add2) & MAXNEG_32) != (add1 & MAXNEG_32));}
 //Checks for carry in logical addition between two 32 bit unsigned integers
 inline bool chkCarry(word add1, word add2){return add1 > (INT32_MAX - add2);}
+
+word signex16_32(halfword in){
+    return std::bit_cast<word>(static_cast<int32_t>(static_cast<int16_t>(in))); //Ignore the error, Intellisense is being stupid. The code compiles as long as you use C++ 20
+}
 
 /*-----------------------------------------------------------------*/
 /* STRUCTS                                                         */

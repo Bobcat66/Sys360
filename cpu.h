@@ -82,9 +82,11 @@ class cpu {
     void writeWord(word data, word address);
     /*Writes doubleword to memory*/
     void writeDoubleword(doubleword data, word address);
+    void setAddr(word address); //Sets instruction counter
 
     void registerChannel(byte address, channel &newchannel);
-
+    byte getPmsk();
+    byte getCond();
     int64_t dec64ToInt(uint64_t dec);
     doubleword bin32toDec(word num);
 

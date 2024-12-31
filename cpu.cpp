@@ -153,6 +153,18 @@ doubleword cpu::packPSW(){
     return packpsw;
 }
 
+void cpu::setAddr(word address) {
+    psw.nxia = address;
+}
+
+byte cpu::getPmsk() {
+    return psw.pmsk;
+}
+
+byte cpu::getCond() {
+    return psw.cond;
+}
+
 /* PRIVATE */
 
 void cpu::cycle(){

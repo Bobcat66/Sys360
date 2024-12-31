@@ -733,7 +733,6 @@ class cpu
         if (R1 & comp){
             psw.nxia = rgstrs.gen[R2];
         }
-        //cout << "RUNNING BCR" << std::endl;
     }
     /*R1 is used as a 4 bit mask, and is bitwise ANDed to 2 raised to the power of the PSW condition code. If the AND is true, the PSW NXIA code is switched to the address generated from X1, B2, and D2. RX*/
     void BCX(byte b1, halfword word1, halfword word2){
