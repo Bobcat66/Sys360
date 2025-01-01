@@ -10,18 +10,17 @@ cpu::cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &IS
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
         {0,0,0,0}
     };
+    clockUnit.start();
+    absoluteCounter = 0;
+}
+
+cpu::~cpu(){
+    //std::cout << "\nDESTRUCTING CPU\n";
+    clockUnit.stop();
 }
 
 byte cpu::getByte(word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Reading byte from " << std::hex << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    return core->getByteNoSync(address,psw.key);
+    return core->getByte(address,psw.key);
 }
 
 void cpu::setVerbose(bool enabled){
@@ -29,10 +28,12 @@ void cpu::setVerbose(bool enabled){
 }
 
 void cpu::test(int cycles){
-    std::cout << "TESTING" << std::endl;
+    std::cout << "---------START---------" << std::endl;
     for (int i = 0; i < cycles; i++) {
         cycle();
+        //std::cout << "ABCYCLE " << absoluteCounter << ": " << getWord(72) << std::endl;
     }
+    std::cout << "\n----------END----------\n";
 }
 
 void cpu::setMode(enum CPUMode newMode){
@@ -45,9 +46,6 @@ void cpu::setMode(enum CPUMode newMode){
             case EXECUTION:
                 outputLog << "------------EXECUTE UNIT------------" << std::endl;
                 break;
-            case MEMORY:
-                outputLog << "------------MEMMGMT UNIT------------" << std::endl;
-                break;
             case INTERRUPT:
                 outputLog << "------------INTERRUPTION------------" << std::endl;
                 break;
@@ -57,87 +55,35 @@ void cpu::setMode(enum CPUMode newMode){
 }
 
 halfword cpu::getHalfword(word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Reading halfword from " << std::hex << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    return core->getHalfwordNoSync(address,psw.key);
+    return core->getHalfword(address,psw.key);
 }
 
 word cpu::getWord(word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Reading fullword from " << std::hex << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    return core->getWordNoSync(address,psw.key);
+    return core->getWord(address,psw.key);
 }
 
 doubleword cpu::getDoubleword(word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Reading doubleword from " << std::hex << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    return core->getDoublewordNoSync(address,psw.key);
+    return core->getDoubleword(address,psw.key);
 }
 
 void cpu::writeByte(byte data, word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Writing byte " << std::hex << data << " to " << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    core->writeByteNoSync(data,address,psw.key);
+    if (verbose) {outputLog << "Writing byte " << (int)data << " at " << address << std::endl;}
+    core->writeByte(address,data,psw.key);
 }
 
 void cpu::writeHalfword(halfword data, word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Writing halfword " << std::hex << data << " to " << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    core->writeHalfwordNoSync(data,address,psw.key);
+    if (verbose) {outputLog << "Writing halfword " << data << " at " << address << std::endl;}
+    core->writeHalfword(address,data,psw.key);
 }
 
 void cpu::writeWord(word data, word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Writing fullword " << std::hex << data << " to " << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    core->writeWordNoSync(data,address,psw.key);
+    if (verbose) {outputLog << "Writing word " << data << " at " << address << std::endl;}
+    core->writeWord(address,data,psw.key);
 }
 
 void cpu::writeDoubleword(doubleword data, word address){
-    setMode(MEMORY);
-    if (verbose) {
-        outputLog << "Writing doubleword " << std::hex << data << " to " << address << std::endl;
-    }
-    std::lock_guard<std::mutex> memlock(core->mtx);
-    if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
-    }
-    core->writeDoublewordNoSync(data,address,psw.key);
+    if (verbose) {outputLog << "Writing doubleword " << (int)data << " at " << address << std::endl;}
+    core->writeDoubleword(address,data,psw.key);
 }
 
 void cpu::registerChannel(byte address, channel &newChannel){
@@ -174,6 +120,9 @@ void cpu::setAddr(word address) {
 }
 
 int cpu::startIO(byte channel, byte subchannel, byte device) {
+    if (verbose) {
+        outputLog << "Starting IO on device " << (int)channel << " " << (int)subchannel << " " << (int)device << std::endl;
+    }
     return channels[channel]->startIO({subchannel,device});
 }
 
@@ -205,6 +154,9 @@ void cpu::cycle(){
                 outputLog << "Cycle " << absoluteCounter << std::endl;
                 outputLog << "PSW: " << std::hex << packPSW() << std::endl;
                 outputLog << "Fetched: " << currentInstruction.name << "(" << std::hex << (int)opcode << ")" << std::endl;
+                for (int i = 0; i < 16; i++) {
+                    outputLog << "REGISTER " << i << ": " << rgstrs.gen[i] << std::endl;
+                }
             }
             //Check for privileged instruction
             if (psw.pst == 1 && psw.pst != currentInstruction.pst){
@@ -229,7 +181,6 @@ void cpu::cycle(){
                     retCode = (currentInstruction.run)(this,b1,word1,word2);
                     break;
             }
-            setMode(CONTROL);
             if (retCode.has_value()) {
                 psw.cond = retCode.value();
             }

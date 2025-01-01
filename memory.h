@@ -29,13 +29,14 @@ class memory {
     void writeHalfwordNoSync(word memaddr,halfword data,unsigned int key);
     void writeWordNoSync(word memaddr,word data,unsigned int key);
     void writeDoublewordNoSync(word memaddr,doubleword data,unsigned int key);
+    void coredump(word blockaddr); //Dumps a block of memory to std::cout
     void setKey(word blockaddr,unsigned int newkey);
     unsigned int getKey(word blockaddr);
     bool getReadProtection(word blockaddr);
     void enableReadProtection(word blockaddr,bool enabled);
     private:
-    std::vector<block*> blocks;
-    block* getBlkPtr(word memaddr);
+    std::vector<block> blocks;
+    block& getBlk(word memaddr);
     int getBlkPos(word memaddr);
 };
 #endif

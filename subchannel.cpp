@@ -26,6 +26,7 @@ void subchannel::addDevice(byte devAddr,iodevice* devptr){
 
 int subchannel::startChannelProgram(byte devAddr, word memaddress, byte key){
     std::unique_lock<std::mutex> comLock(commandAccept_mtx,std::defer_lock);
+    ////std::cout << "MEMADDR " << memaddress << std::endl;
     task = std::bind(&subchannel::runChannelProgram,this,devAddr,memaddress,key);
     while (!commandAcceptCode){
         acceptedCommand.wait(comLock);
@@ -113,6 +114,7 @@ void subchannel::runChannelProgram(byte devaddr,word address,byte key){
 
 void subchannel::cycle() {
     std::lock_guard<std::mutex> subchannelLock(subchannel_mtx);
+    //std::cout << "CYCLE" << std::endl;
     doubleword ccw;
     byte opcode;
     word address;
@@ -123,7 +125,10 @@ void subchannel::cycle() {
     std::unique_lock<std::mutex> memlock(core->mtx,std::defer_lock);
     //PROGRAM ERROR HANDLING
     try {
+        //std::cout << "FETCHING CCW" << std::endl;
+        //std::cout << csw.pc << std::endl;
         ccw = core->getDoubleword(csw.pc,0);
+        //std::cout << "FETCHED CCW" << std::endl;
     } catch (int e){
         csw.csc |= PRGRM;
         subchannel_busy = false;
@@ -136,7 +141,7 @@ void subchannel::cycle() {
     originalCount = ccw % ((doubleword)1 << 16);
     csw.count = originalCount;
     noSuppressLen = !((flags & SPLN_FLAG) && !(flags & CHDT_FLAG));
-
+    //std::cout << "LOADED CCW" << std::endl;
     //PROGRAM ERROR HANDLING
     if (!originalCount && !(opcode == 0b1000)){
         csw.csc |= PRGRM;
@@ -200,6 +205,7 @@ void subchannel::cycle() {
                 memlock.lock();
                 for (int i = 0; i < originalCount; i++){
                     try {
+                        //std::cout << i << std::endl;
                         buffer.push_back((char)core->getByteNoSync(address+i,csw.key)); 
                     } catch (int e) {
                         csw.csc |= PRTCT;
@@ -276,9 +282,10 @@ void subchannel::cycle() {
     if (flags & PGCI_FLAG) {
         pendingInterrupts++;
     }
+
     exit_cycle:
     csw.pc += 8;
     if (!(flags & CHCM_FLAG)){
-        subchannel_busy = false;
+        subchannel_busy.store(false);
     }
 }

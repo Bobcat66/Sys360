@@ -39,6 +39,7 @@ class cpu {
     public:
     friend class channel;
     cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA, std::ostream &outputLog);
+    ~cpu();
     Registers rgstrs;
     std::shared_ptr<memory> core;
     void IPL(halfword cuu);

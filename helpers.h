@@ -2,6 +2,10 @@
 #define HELPERS_H
 
 #include <cstdint>
+#include <concepts>
+#include <bit>
+#include <algorithm>
+#include <array>
 
 /*-----------------------------------------------------------------*/
 /* STANDARD DATA SIZES                                             */
@@ -44,5 +48,13 @@ inline halfword rightHalfword(word in){return (in%LSHFT16);}
 
 inline word leftWord(doubleword in){return (word)(in/LSHFT32);}
 inline word rightWord(doubleword in){return (word)(in%LSHFT32);}
+
+template<std::integral T> constexpr T byteswap(T value) noexcept
+{
+    static_assert(std::has_unique_object_representations_v<T>, "T may not have padding bits");
+    auto value_representation = std::bit_cast<std::array<std::byte, sizeof(T)>>(value);
+    std::ranges::reverse(value_representation);
+    return std::bit_cast<T>(value_representation);
+}
 
 #endif

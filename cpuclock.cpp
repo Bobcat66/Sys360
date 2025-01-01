@@ -1,16 +1,18 @@
 #include "cpuclock.h"
 #include <thread>
+
 void cpu_clock::reset(){
     time = 0;
 }
 
 void cpu_clock::start(){
     running = true;
-    std::thread clockthread(&cpu_clock::run,this);
+    clockthread = std::thread(&cpu_clock::run,this);
 }
 
 void cpu_clock::stop(){
     running = false;
+    clockthread.join();
 }
 
 void cpu_clock::setInterval(unsigned long newInterval){
