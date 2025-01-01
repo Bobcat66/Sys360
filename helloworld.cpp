@@ -18,52 +18,52 @@ int main() {
     mem->writeDoubleword(104,0x0D0003E80000000D,0);
     std::cout << "CHANNEL CODE LOADED" << std::endl;
     /* Program Code */
-    mem->writeWord(0x418, 0x5A1003FC, 0);
-    mem->writeWord(0x41C, 0x5A100404, 0);
-    mem->writeWord(0x420, 0x5A100408, 0);
-    mem->writeWord(0x424, 0x5A100408, 0);
+    mem->writeWord(0x00000418, 0x5A1003FC, 0);
+    mem->writeWord(0x0000041C, 0x5A100404, 0);
+    mem->writeWord(0x00000420, 0x5A100408, 0);
+    mem->writeWord(0x00000424, 0x5A100408, 0);
 
-    mem->writeWord(0x428, 0x421003ED, 0);
-    mem->writeWord(0x42C, 0x5A100408, 0);
-    mem->writeWord(0x430, 0x421003F3, 0);
-    mem->writeWord(0x434, 0x5B100408, 0);
+    mem->writeWord(0x00000428, 0x421003ED, 0);
+    mem->writeWord(0x0000042C, 0x5A100408, 0);
+    mem->writeWord(0x00000430, 0x421003F3, 0);
+    mem->writeWord(0x00000434, 0x5B100408, 0);
 
-    mem->writeWord(0x438, 0x5A1003F8, 0);
-    mem->writeWord(0x43C, 0x421003F0, 0);
-    mem->writeWord(0x440, 0x5A100404, 0);
-    mem->writeWord(0x444, 0x421003EE, 0);
+    mem->writeWord(0x00000438, 0x5A1003F8, 0);
+    mem->writeWord(0x0000043C, 0x421003F0, 0);
+    mem->writeWord(0x00000440, 0x5A100404, 0);
+    mem->writeWord(0x00000444, 0x421003EE, 0);
 
-    mem->writeWord(0x448, 0x5B100404, 0);
-    mem->writeWord(0x44C, 0x5B100400, 0);
-    mem->writeWord(0x450, 0x421003E8, 0);
-    mem->writeWord(0x454, 0x5B100408, 0);
+    mem->writeWord(0x00000448, 0x5B100404, 0);
+    mem->writeWord(0x0000044C, 0x5B100400, 0);
+    mem->writeWord(0x00000450, 0x421003E8, 0);
+    mem->writeWord(0x00000454, 0x5B100408, 0);
 
-    mem->writeWord(0x458, 0x5B100408, 0);
-    mem->writeWord(0x45C, 0x5B100408, 0);
-    mem->writeWord(0x460, 0x421003E9, 0);
-    mem->writeWord(0x464, 0x5A100400, 0);
+    mem->writeWord(0x00000458, 0x5B100408, 0);
+    mem->writeWord(0x0000045C, 0x5B100408, 0);
+    mem->writeWord(0x00000460, 0x421003E9, 0);
+    mem->writeWord(0x00000464, 0x5A100400, 0);
 
-    mem->writeWord(0x468, 0x421003EC, 0);
-    mem->writeWord(0x46C, 0x421003EF, 0);
-    mem->writeWord(0x470, 0x5B100408, 0);
-    mem->writeWord(0x474, 0x421003F2, 0);
+    mem->writeWord(0x00000468, 0x421003EC, 0);
+    mem->writeWord(0x0000046C, 0x421003EF, 0);
+    mem->writeWord(0x00000470, 0x5B100408, 0);
+    mem->writeWord(0x00000474, 0x421003F2, 0);
 
-    mem->writeWord(0x478, 0x5A100408, 0);
-    mem->writeWord(0x47C, 0x5A100404, 0);
-    mem->writeWord(0x480, 0x5A100408, 0);
-    mem->writeWord(0x484, 0x5A100408, 0);
+    mem->writeWord(0x00000478, 0x5A100408, 0);
+    mem->writeWord(0x0000047C, 0x5A100404, 0);
+    mem->writeWord(0x00000480, 0x5A100408, 0);
+    mem->writeWord(0x00000484, 0x5A100408, 0);
 
-    mem->writeWord(0x488, 0x421003EA, 0);
-    mem->writeWord(0x48C, 0x421003EB, 0);
-    mem->writeWord(0x490, 0x421003F1, 0);
-    mem->writeWord(0x494, 0x9C100000, 0);
+    mem->writeWord(0x00000488, 0x421003EA, 0);
+    mem->writeWord(0x0000048C, 0x421003EB, 0);
+    mem->writeWord(0x00000490, 0x421003F1, 0);
+    mem->writeWord(0x00000494, 0x9C100000, 0);
     std::cout << "PROGRAM CODE LOADED" << std::endl;
     /* Memory Initialization */
-    mem->writeWord(0x3F8,0x00000032,0);
-    mem->writeWord(0x3FC,0x00000019,0);
-    mem->writeWord(0x400,0x0000000A,0);
-    mem->writeWord(0x404,0x00000005,0);
-    mem->writeWord(0x408,0x00000001,0);
+    mem->writeWord(0x000003F8, 0x00000032, 0);
+    mem->writeWord(0x000003FC, 0x00000019, 0);
+    mem->writeWord(0x00000400, 0x0000000A, 0);
+    mem->writeWord(0x00000404, 0x00000005, 0);
+    mem->writeWord(0x00000408, 0x00000001, 0);
     //mem->coredump(0x408);
     std::cout << "MEMORY INITIALIZATION COMPLETE" << std::endl;
     //std::cout << mem->getWord(72,0) << std::endl;
@@ -92,11 +92,13 @@ HELLO WORLD PROGRAM
 MEMORY
 
 --CHANNEL PROGRAM--
-CAW: 100 (DEC)
+CAW: 104 (DEC)
 
 DEC: HEX
-100-107: 0D0003E80000000D
+104-111: 0D0003E80000000D
 
+
+NOTE: BELOW IS THE STATE OF MEMORY AFTER THE PROGRAM COMPLETES. 1000-1011 ARE BLANK WHEN INITIALIZED
 DEC: CHAR DEC
 1000: H 72 -
 1001: E 69 -
@@ -199,7 +201,7 @@ A       R1      R0 408
 STC     R1      R0 3EA
 STC     R1      R0 3EB
 STC     R1      R0 3F1
-SIO             R0/000
+SIO             R0 000
 
 -- MACHINE CODE --
 
