@@ -77,7 +77,7 @@ struct Registers {
 
 //inline word leftWord(doubleword in){return (word)(in/(1 << 32));}
 //inline word rightWord(doubleword in){return (word)(in%(1 << 32));}
-
+/*
 inline halfword displacement(halfword in){return in%(1<<12);}
 inline uint8_t baseRegister(halfword in){return in/(1<<12);}
 
@@ -97,7 +97,7 @@ enum InstructionSet {
     COM, //Commercial ISA, Superset of the Standard ISA that adds decimal arithmetic
     UNI //Universal ISA, Superset of the Standard ISA that combines the features from both the Commercial and Scientific ISAs
 };
-
+*/
 class cpu;
 
 typedef void (cpu::*op)(byte,halfword,halfword);

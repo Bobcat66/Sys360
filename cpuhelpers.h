@@ -73,9 +73,7 @@ inline bool chkOverflow(word add1, word add2){return ((add1 & MAXNEG_32) != (add
 //Checks for carry in logical addition between two 32 bit unsigned integers
 inline bool chkCarry(word add1, word add2){return add1 > (INT32_MAX - add2);}
 
-word signex16_32(halfword in){
-    return std::bit_cast<word>(static_cast<int32_t>(static_cast<int16_t>(in))); //Ignore the error, Intellisense is being stupid. The code compiles as long as you use C++ 20
-}
+inline word signex16_32(halfword in){return std::bit_cast<word>(static_cast<int32_t>(static_cast<int16_t>(in)));} //Ignore the error, Intellisense is being stupid. The code compiles as long as you use C++ 20
 
 /*-----------------------------------------------------------------*/
 /* STRUCTS                                                         */
@@ -84,12 +82,10 @@ word signex16_32(halfword in){
 class cpu;
 
 struct instruction {
-    const unsigned int pst : 1; //0 = privileged instruction, 1 = unprivileged instruction
-    const unsigned int ilc : 2;
-    const std::string name;
+    unsigned int pst : 1; //0 = privileged instruction, 1 = unprivileged instruction
+    unsigned int ilc : 2;
+    std::string name;
     std::optional<int> (*run)(cpu *cpuptr,byte b1,halfword word1,halfword word2);
 };
-
-
 
 #endif

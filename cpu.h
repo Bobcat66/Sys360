@@ -9,24 +9,6 @@
 #include "cpuclock.h"
 #include <ostream>
 
-//TODO: Redo memory with new synchronized memory functions
-
-//Sysmask channel bitmasks
-#define CHANNEL0 0b10000000
-#define CHANNEL1 0b01000000
-#define CHANNEL2 0b00100000
-#define CHANNEL3 0b00010000
-#define CHANNEL4 0b00001000
-#define CHANNEL5 0b00000100
-#define OTHERCHN 0b00000010
-#define EXTRNCHN 0b00000001
-
-//Progmask channel bitmasks
-#define FIP_OVERFLOW 0b1000 //Fixed-point overflow
-#define DEC_OVERFLOW 0b0100 //Decimal overflow
-#define EXP_UNDRFLOW 0b0010 //Exponent underflow
-#define SIGNIFICANCE 0b0001 //Significance
-
 struct ProgramStatusWord {
     unsigned int smsk : 8; //System Mask, Controls interruptions. Bits 0-5 enable channels 0-5, bit 6 enables all remaining channels, and bit 7 enables external interruptions
     unsigned int key : 4; //CPU protection key. This is compared with storage protection key. Setting this key to 0 gives unlimited access to memory
@@ -53,16 +35,14 @@ struct Registers {
     doubleword fp[4]; //Floating-point registers
 };
 
-class cpu;
-
 class cpu {
     public:
     friend class channel;
     cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISA, std::ostream &outputLog);
-    ~cpu();
     Registers rgstrs;
     std::shared_ptr<memory> core;
-    void IPL(halfword cuu); 
+    void IPL(halfword cuu);
+    void test(int cycles); //A function for unit-testing the CPU
     /*Returns the byte stored at the address*/
     byte getByte(word address);
     /*Returns the halfword stored at the address.*/
@@ -82,7 +62,7 @@ class cpu {
     /*Writes doubleword to memory*/
     void writeDoubleword(doubleword data, word address);
     void setAddr(word address); //Sets instruction counter
-
+    void setVerbose(bool enabled);
     void registerChannel(byte address, channel &newchannel);
     int startIO(byte channel, byte subchannel, byte dev);
     int haltIO(byte channel, byte subchannel, byte dev);

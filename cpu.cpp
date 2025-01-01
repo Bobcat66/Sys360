@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "cpuhelpers.h"
+#include <iostream>
 
 cpu::cpu(std::shared_ptr<memory> memptr,std::unordered_map<byte,instruction> &ISARef,std::ostream& outputLogRef)
     :outputLog(outputLogRef),ISA(ISARef){
@@ -18,9 +19,20 @@ byte cpu::getByte(word address){
     }
     std::lock_guard<std::mutex> memlock(core->mtx);
     if (verbose) {
-        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime();
+        outputLog << "Memory Lock Acquired at " << std::dec << clockUnit.gettime() << std::endl;
     }
     return core->getByteNoSync(address,psw.key);
+}
+
+void cpu::setVerbose(bool enabled){
+    this->verbose = enabled;
+}
+
+void cpu::test(int cycles){
+    std::cout << "TESTING" << std::endl;
+    for (int i = 0; i < cycles; i++) {
+        cycle();
+    }
 }
 
 void cpu::setMode(enum CPUMode newMode){
@@ -29,12 +41,16 @@ void cpu::setMode(enum CPUMode newMode){
         switch (mode)  {
             case CONTROL:
                 outputLog << "------------CONTROL UNIT------------" << std::endl;
+                break;
             case EXECUTION:
                 outputLog << "------------EXECUTE UNIT------------" << std::endl;
+                break;
             case MEMORY:
                 outputLog << "------------MEMMGMT UNIT------------" << std::endl;
+                break;
             case INTERRUPT:
                 outputLog << "------------INTERRUPTION------------" << std::endl;
+                break;
         }
         outputLog << std::dec << clockUnit.gettime() << " MICROSECONDS" << std::endl;
     }
@@ -173,18 +189,22 @@ byte cpu::getCond() {
     return psw.cond;
 }
 
+word cpu::getAddr(uint8_t X, uint8_t B, uint16_t D){
+    return (rgstrs.gen[X] + rgstrs.gen[B] + D) % (1<<24);
+}
+
 /* PRIVATE */
 
 void cpu::cycle(){
-    setMode(CONTROL);
     try {
         byte opcode = getByte(psw.nxia);
+        setMode(CONTROL);
         try {
             instruction currentInstruction = ISA[opcode]; 
             if (verbose) {
                 outputLog << "Cycle " << absoluteCounter << std::endl;
                 outputLog << "PSW: " << std::hex << packPSW() << std::endl;
-                outputLog << "Fetched: " << currentInstruction.name << std::endl;
+                outputLog << "Fetched: " << currentInstruction.name << "(" << std::hex << (int)opcode << ")" << std::endl;
             }
             //Check for privileged instruction
             if (psw.pst == 1 && psw.pst != currentInstruction.pst){
@@ -194,17 +214,22 @@ void cpu::cycle(){
             psw.ilc = currentInstruction.ilc;
             psw.nxia += (2*psw.ilc); //Increases instruction counter, can be overridden by the actual operation
             std::optional<int> retCode;
+            byte b1 = getByte(oldIA + 1);
+            halfword word1 = getHalfword(oldIA+2);
+            halfword word2 = getHalfword(oldIA+4);
+            setMode(EXECUTION);
             switch (psw.ilc){
                 case 1:
-                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),0,0);
+                    retCode = (currentInstruction.run)(this,b1,0,0);
                     break;
                 case 2:
-                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),0);
+                    retCode = (currentInstruction.run)(this,b1,word1,0);
                     break;
                 case 3:
-                    retCode = (currentInstruction.run)(this,getByte(oldIA + 1),getHalfword(oldIA+2),getHalfword(oldIA+4));
+                    retCode = (currentInstruction.run)(this,b1,word1,word2);
                     break;
             }
+            setMode(CONTROL);
             if (retCode.has_value()) {
                 psw.cond = retCode.value();
             }

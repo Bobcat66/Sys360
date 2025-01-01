@@ -6,7 +6,7 @@ void cpu_clock::reset(){
 
 void cpu_clock::start(){
     running = true;
-    std::thread clockthread(cpu_clock::run,this);
+    std::thread clockthread(&cpu_clock::run,this);
 }
 
 void cpu_clock::stop(){
