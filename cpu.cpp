@@ -86,8 +86,8 @@ void cpu::writeDoubleword(doubleword data, word address){
     core->writeDoubleword(address,data,psw.key);
 }
 
-void cpu::registerChannel(byte address, channel &newChannel){
-    channels[address] = std::make_unique<channel>(newChannel);
+void cpu::registerChannel(byte address, std::unique_ptr<channel> &newChannel){
+    channels[address] = std::move(newChannel);
 }
 
 doubleword cpu::packPSW(){

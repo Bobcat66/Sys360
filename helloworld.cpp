@@ -70,10 +70,10 @@ int main() {
     cpu tcpu(mem,stdisa,logfile);
     tcpu.setAddr(0x00000418);
     tcpu.setVerbose(true);
-    channel tchannel(mem,0);
-    stdioDevice tdev;
-    tchannel.addSubchannel(0);
-    tchannel.addDevice({0,0},&tdev);
+    std::unique_ptr<channel> tchannel = std::make_unique<channel>(mem,0);
+    std::unique_ptr<subchannel> tsubchannel = std::make_unique<subchannel>(0,mem);
+    tchannel->addSubchannel(tsubchannel);
+    tchannel->addDevice({0,0},new stdioDevice());
     tcpu.registerChannel(0,tchannel);
     std::cout << "BOOTING VIRTUAL SYSTEM" << std::endl;
     //std::cout << mem->getWord(72,0) << std::endl;

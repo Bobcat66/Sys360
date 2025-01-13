@@ -64,7 +64,7 @@ class cpu {
     void writeDoubleword(doubleword data, word address);
     void setAddr(word address); //Sets instruction counter
     void setVerbose(bool enabled);
-    void registerChannel(byte address, channel &newchannel);
+    void registerChannel(byte address, std::unique_ptr<channel> &newchannel);
     int startIO(byte channel, byte subchannel, byte dev);
     int haltIO(byte channel, byte subchannel, byte dev);
 

@@ -42,6 +42,7 @@ class subchannel {
     std::unordered_map<byte,iodevice*> devices;
     std::optional<std::function<void()>> task;
     std::atomic_bool subchannel_busy;
+    std::atomic_bool task_running;
     std::mutex commandAccept_mtx;
     void runThread();
     void runChannelProgram(byte devaddr,word address,byte key);

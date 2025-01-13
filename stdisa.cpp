@@ -439,6 +439,16 @@ std::optional<int> COMPARE_DECIMAL(cpu *cpu,byte b1,halfword word1, halfword wor
 
 std::optional<int> COMPARE_HALFWORD(cpu *cpu,byte b1,halfword word1, halfword word2) {
     std::optional<int> ret; 
+    LOAD_RX_FIELDS
+    int32_t signedOprnd1 = std::bit_cast<int32_t>(cpu->rgstrs.gen[R1]);
+    int32_t signedOprnd2 = std::bit_cast<int16_t>(cpu->getHalfword(cpu->getAddr(X1,B2,D2)));
+    if (signedOprnd1 == signedOprnd2) {
+        ret = 0;
+    } else if (signedOprnd1 < signedOprnd2) {
+        ret = 1;
+    } else {
+        ret = 2;
+    }
     return ret;
 }
 
@@ -636,7 +646,7 @@ std::optional<int> LOAD(cpu *cpu,byte b1,halfword word1, halfword word2) {
 
 std::optional<int> LOAD_ADDRESS(cpu *cpu,byte b1,halfword word1, halfword word2) {
     std::optional<int> ret;
- 
+
     return ret;
 }
 

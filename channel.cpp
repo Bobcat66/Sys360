@@ -9,14 +9,9 @@ channel::channel(std::shared_ptr<memory> memPtr,const byte channelAddress)
     core = memPtr;
 }
 
-channel::~channel(){
-    for (auto& [key,value] : subchannels) {
-        delete value;
-    }
-}
-
-void channel::addSubchannel(byte subchannelID) {
-    subchannels.insert(std::make_pair(subchannelID,new subchannel(subchannelID,core)));
+void channel::addSubchannel(std::unique_ptr<subchannel> &newSubchannel) {
+    byte addr = newSubchannel->subchannelID;
+    subchannels[addr] = std::move(newSubchannel);
 }
 
 void channel::addDevice(deviceAddress devaddr,iodevice* devptr) {

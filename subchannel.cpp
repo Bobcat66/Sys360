@@ -6,17 +6,23 @@
 /*-----------------------------------------------------------------*/
 
 subchannel::subchannel(const byte ID,std::shared_ptr<memory> coreptr)
-:subchannelID(ID)
-,workerThread{}{
-    core = coreptr;
-    threadActive = true;
-    subchannel_busy = false;
-    workerThread = std::thread{&subchannel::runThread,this};
-}
+    :subchannelID(ID)
+    ,workerThread{}
+    ,core{coreptr}
+    {
+        workerThread = std::thread(&subchannel::runThread,this);
+        task = std::nullopt;
+        workerThread.detach();
+        threadActive = true;
+        subchannel_busy = false;
+    }
 
 subchannel::~subchannel() {
+    while (task_running) {} //Waits for subchannel to complete its current task
     threadActive = false;
-    workerThread.join();
+    for (auto& [key,val] : devices){
+        delete val;
+    }
 }
 
 void subchannel::addDevice(byte devAddr,iodevice* devptr){
@@ -58,8 +64,6 @@ byte subchannel::getDevID() {
     return deviceID.load();
 }
 
-
-
 /*-----------------------------------------------------------------*/
 /* PRIVATE                                                         */
 /*-----------------------------------------------------------------*/
@@ -67,8 +71,10 @@ byte subchannel::getDevID() {
 void subchannel::runThread() {
     while (threadActive) {
         if (task) {
+            task_running = true;
             task.value()(); //Runs task
             task.reset(); //Resets task after it is finished
+            task_running = false;
         }
     }
 }

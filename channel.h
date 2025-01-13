@@ -13,8 +13,7 @@
 class channel {
     public:
     channel(std::shared_ptr<memory> memPtr,const byte channelAddress);
-    ~channel();
-    void addSubchannel(byte subchannelID);
+    void addSubchannel(std::unique_ptr<subchannel> &newSubchannel);
     void addDevice(deviceAddress devaddr,iodevice* devptr); //4 high order bits designate the subchannel, 4 low order bits designate the device ID
     int startIO(deviceAddress devaddr); //Starts the given subchannel, returns a condition code to be stored in the psw
     int haltIO(deviceAddress devaddr); //Immediately halts the given subchannel
@@ -25,7 +24,7 @@ class channel {
     void storeCSW(doubleword csw); //Stores CSW at address 64 in memory
     word fetchCAW(); //Retrieves CAW from address 72 in memory
     std::shared_ptr<memory> core;
-    std::unordered_map<byte,subchannel*> subchannels;
+    std::unordered_map<byte,std::unique_ptr<subchannel>> subchannels;
 };
 
 #endif
